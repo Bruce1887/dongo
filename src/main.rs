@@ -1,3 +1,4 @@
+use common::{CAM_START_FOV, CAM_START_POS, CAM_START_TARGET, CAM_START_UP, CAM_START_Z_FAR, CAM_START_Z_NEAR};
 use dongo::*;
 use std::{sync::Arc, vec};
 
@@ -18,12 +19,12 @@ pub fn main() {
 
     let mut camera = Camera::new_perspective(
         window.viewport(),
-        vec3(0.0, 0.0, 600.0),
-        vec3(0.0, 0.0, 0.0),
-        vec3(0.0, 1.0, 0.0),
-        degrees(45.0),
-        0.1,
-        1000.0,
+        CAM_START_POS,
+        CAM_START_TARGET,
+        CAM_START_UP,
+        CAM_START_FOV,
+        CAM_START_Z_NEAR,
+        CAM_START_Z_FAR,
     );
     
     let map_generator = MapGenerator::read_from_file(common::MAPFILE_PATH).unwrap();
@@ -34,7 +35,7 @@ pub fn main() {
     let mut directional_light =
         renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(1.0, 0.0, -1.0));
     directional_light.generate_shadow_map(32, models.iter());
-
+    let EvHan = event_handler::EventHandler::new();
     // Start the main render loop
     window.render_loop(
         move |frame_input| // Begin a new frame with an updated frame input
@@ -43,7 +44,7 @@ pub fn main() {
         camera.set_viewport(frame_input.viewport);
 
         // Check for events
-        event_handler::handle_events(&frame_input.events, &mut camera);                              
+        EvHan.handle_events(&frame_input.events, &mut camera);                              
 
         let objects = Arc::clone(&models);
         // Get the screen render target to be able to render something on the screen

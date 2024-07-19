@@ -1,8 +1,9 @@
 use dongo::map_generator::*;
+use dongo::common::MAP_COLOR_MODE;
 
 fn main() {
     let mut mapgen = MapGenerator::new(dongo::common::MAP_SIZE);
-    mapgen.define_parameters(ColorMode::HeightMap);
+    mapgen.define_parameters(MAP_COLOR_MODE);
 
     println!("Writing to file...");
     mapgen.write_to_file();
