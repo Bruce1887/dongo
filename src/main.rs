@@ -3,6 +3,9 @@ use std::{sync::Arc, vec};
 use three_d::*;
 mod event_handler;
 mod map_generator;
+use map_generator::*;
+
+
 
 pub fn main() {
     // Create a window (a canvas on web)
@@ -18,15 +21,17 @@ pub fn main() {
 
     let mut camera = Camera::new_perspective(
         window.viewport(),
-        vec3(0.0, 0.0, 6.0),
+        vec3(0.0, 0.0, 90.0),
         vec3(0.0, 0.0, 0.0),
         vec3(0.0, 1.0, 0.0),
         degrees(45.0),
         0.1,
-        10.0,
+        100.0,
     );    
 
-    let map_model = map_generator::generate((4,4),&context);        
+    const MAP_SIZE: (usize,usize) = (100,100);
+    let map_generator = MapGenerator::new(MAP_SIZE);
+    let map_model = map_generator.generate(ColorMode::Height,&context);        
 
     let models = Arc::new(vec![map_model]);
     
