@@ -3,6 +3,8 @@ name = "dongo"
 version = "0.1.0"
 edition = "2021"
 
+default-run = "dongo"
+
 [dependencies]
 three-d = "0.17.0"
 rand = "0.8.4"

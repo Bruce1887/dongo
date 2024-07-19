@@ -1,11 +1,8 @@
+use dongo::*;
 use std::{sync::Arc, vec};
 
-use three_d::*;
-mod event_handler;
-mod map_generator;
 use map_generator::*;
-
-
+use three_d::*;
 
 pub fn main() {
     // Create a window (a canvas on web)
@@ -15,26 +12,29 @@ pub fn main() {
         ..Default::default()
     })
     .unwrap();
-    
+
     // Get the graphics context from the window
     let context = window.gl();
 
     let mut camera = Camera::new_perspective(
         window.viewport(),
-        vec3(0.0, 0.0, 40.0),
+        vec3(0.0, 0.0, 600.0),
         vec3(0.0, 0.0, 0.0),
         vec3(0.0, 1.0, 0.0),
         degrees(45.0),
         0.1,
         1000.0,
-    );    
-
-    const MAP_SIZE: (usize,usize) = (512,512);
-    let map_generator = MapGenerator::new(MAP_SIZE);
-    let map_model = map_generator.generate(ColorMode::HeightMap,&context);        
+    );
+    
+    let map_generator = MapGenerator::read_from_file(common::MAPFILE_PATH).unwrap();
+    let map_model = map_generator.generate(&context);
 
     let models = Arc::new(vec![map_model]);
-    
+
+    let mut directional_light =
+        renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(1.0, 0.0, -1.0));
+    directional_light.generate_shadow_map(32, models.iter());
+
     // Start the main render loop
     window.render_loop(
         move |frame_input| // Begin a new frame with an updated frame input
@@ -60,12 +60,11 @@ pub fn main() {
     );
 }
 
-
 /*
 for e in &frame_input.events {
             if let Event::MouseWheel {delta, position: _, modifiers: _, handled: _} = e {
-                dbg!(camera.position());                            
-                //dbg!(delta, position, modifiers, handled);             
+                dbg!(camera.position());
+                //dbg!(delta, position, modifiers, handled);
 
                 let mut pos_clone = camera.position().clone();
                 let target_clone = camera.target().clone();
@@ -73,9 +72,9 @@ for e in &frame_input.events {
 
                 pos_clone.z += delta.1;
                 dbg!(delta);
-                dbg!(pos_clone);    
+                dbg!(pos_clone);
                 camera.set_view(pos_clone, target_clone, up_clone);
-                //camera.zoom_towards(&zoom_target, delta.0, 10.0, 50.0);                
+                //camera.zoom_towards(&zoom_target, delta.0, 10.0, 50.0);
             }
         }
  */
