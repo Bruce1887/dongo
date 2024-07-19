@@ -21,17 +21,17 @@ pub fn main() {
 
     let mut camera = Camera::new_perspective(
         window.viewport(),
-        vec3(0.0, 0.0, 90.0),
+        vec3(0.0, 0.0, 40.0),
         vec3(0.0, 0.0, 0.0),
         vec3(0.0, 1.0, 0.0),
         degrees(45.0),
         0.1,
-        100.0,
+        1000.0,
     );    
 
-    const MAP_SIZE: (usize,usize) = (100,100);
+    const MAP_SIZE: (usize,usize) = (512,512);
     let map_generator = MapGenerator::new(MAP_SIZE);
-    let map_model = map_generator.generate(ColorMode::Height,&context);        
+    let map_model = map_generator.generate(ColorMode::HeightMap,&context);        
 
     let models = Arc::new(vec![map_model]);
     
@@ -43,7 +43,7 @@ pub fn main() {
         camera.set_viewport(frame_input.viewport);
 
         // Check for events
-        event_handler::handle_events(&frame_input.events);                      
+        event_handler::handle_events(&frame_input.events, &mut camera);                              
 
         let objects = Arc::clone(&models);
         // Get the screen render target to be able to render something on the screen
@@ -59,3 +59,23 @@ pub fn main() {
     },    
     );
 }
+
+
+/*
+for e in &frame_input.events {
+            if let Event::MouseWheel {delta, position: _, modifiers: _, handled: _} = e {
+                dbg!(camera.position());                            
+                //dbg!(delta, position, modifiers, handled);             
+
+                let mut pos_clone = camera.position().clone();
+                let target_clone = camera.target().clone();
+                let up_clone = camera.up().clone();
+
+                pos_clone.z += delta.1;
+                dbg!(delta);
+                dbg!(pos_clone);    
+                camera.set_view(pos_clone, target_clone, up_clone);
+                //camera.zoom_towards(&zoom_target, delta.0, 10.0, 50.0);                
+            }
+        }
+ */

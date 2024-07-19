@@ -1,15 +1,14 @@
+use three_d::*;
+use noise::{Perlin, NoiseFn};
 use rand::Rng;
 
-use three_d::*;
 
-const MAP_MAX_HEIGHT: f32 = 5.0;
-const MAP_MIN_HEIGHT: f32 = 0.0;
-
-const ELEVATION_CHANGE: f32 = 1.0; // max change in height between two adjacent vertices
+const MAP_MAX_HEIGHT: f64 = 5.0;
+const MAP_MIN_HEIGHT: f64 = 0.0;
 
 #[allow(dead_code)]
 pub enum ColorMode {
-    Height,
+    HeightMap,
     Checkerboard,    
 }
 pub struct MapGenerator {
@@ -56,30 +55,36 @@ impl MapGenerator {
         return Gm::new(Mesh::new(context, &cpu_mesh), ColorMaterial::default());
     }
 
+    /// generate positions of the vertices
     fn define_positions(&mut self) {
-        // generate positions of the vertices
         let mut rng = rand::thread_rng();
-        let mut height = rng.gen_range(MAP_MIN_HEIGHT..=MAP_MAX_HEIGHT).round();
-        // println!("startheight: {}",height);
-    
+        let seed: u32 = rng.gen();
+        let noise = Perlin::new(seed);                
+        
         for y in 0..self.vert_size.1 {
-            // println!("y: {}",y);
             for x in 0..self.vert_size.0 {
+                println!("generating position: {} / {}", y * self.vert_size.0 + x +1, self.num_verts);
+
+                let nx = x as f64 / self.vert_size.0 as f64;
+                let ny = y as f64 / self.vert_size.1 as f64;
+                let nz = 0.0; // You can change this value to get different noise patterns
+
+                let noise_value = noise.get([nx, ny, nz]);
+                let normalized_value = (noise_value + 1.0) / 2.0;
+                let height = normalized_value * (MAP_MAX_HEIGHT - MAP_MIN_HEIGHT) + MAP_MIN_HEIGHT;
+                
+                
+
                 self.positions.push(vec3(
-                    x as f32 - self.size.0 as f32 / 2f32,
-                    y as f32 - self.size.1 as f32 / 2f32,
-                    height,
+                    x as f32 - self.size.0 as f32 / 2.0,
+                    y as f32 - self.size.1 as f32 / 2.0,
+                    height as f32,
                 ));
-    
-                // change the height of the next vertex
-                let elevation_change = rng.gen_range(-ELEVATION_CHANGE..=ELEVATION_CHANGE).round();
-                // println!("height: {}",height);
-                // println!("x: {}",x);
-                height = (height + elevation_change).clamp(MAP_MIN_HEIGHT, MAP_MAX_HEIGHT);
             }
         }
     }
     
+    /// generate indices of the vertices 
     fn define_indences(&mut self) {
         // define the indices of the vertices
         for y in 0..self.vert_size.1 {
@@ -100,26 +105,27 @@ impl MapGenerator {
         }
     }
     
+    /// paint the mesh with colors
     fn paint_my_mesh(&mut self, colormode: ColorMode) {
         match colormode {
-            ColorMode::Height => {
+            ColorMode::HeightMap => {
                 // color the vertices based on their height
                 for i in 0..self.num_verts {
                     let height_range = MAP_MAX_HEIGHT - MAP_MIN_HEIGHT;
                     let height = self.positions[i].z;
-                    if height < height_range / 4.0 {
+                    if height < (height_range / 4.0) as f32 { // lowest 25% of the height range
                         self.colors.push(Srgba::BLACK);
-                    } else if height < height_range / 2.0 {
+                    } else if height < (height_range / 2.0) as f32 { // 25% to 50% of the height range
                         self.colors.push(Srgba::BLUE);
-                    } else if height < 3.0 * height_range / 4.0 {
+                    } else if height < (3.0 * height_range / 4.0) as f32 { // 50% to 75% of the height range
                         self.colors.push(Srgba::GREEN);
-                    } else {
-                        self.colors.push(Srgba::WHITE);
+                    } else { // highest 25% of the height range
+                        self.colors.push(Srgba::WHITE); 
                     }
                 }
             }
             ColorMode::Checkerboard => {
-                // strange color pattern, kinda useful
+                // strange symmetrical color pattern, kinda useful
                 for i in 0..self.vert_size.0 {
                     for j in 0..self.vert_size.1 {
                         let color = if i % 2 == 0 && j % 2 == 0 {

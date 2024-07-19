@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 three-d = "0.17.0"
 rand = "0.8.4"
+noise = "0.9.0"
