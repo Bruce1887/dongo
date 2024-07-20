@@ -1,4 +1,4 @@
-use crate::common::MAPFILE_PATH;
+use crate::common::{MAPFILE_PATH, MAP_MAX_HEIGHT, MAP_MIN_HEIGHT};
 use crate::error::DongoError;
 
 use noise::{NoiseFn, Perlin};
@@ -7,8 +7,6 @@ use three_d::*;
 
 use std::{fs::File, io::prelude::*};
 
-const MAP_MAX_HEIGHT: f64 = 5.0;
-const MAP_MIN_HEIGHT: f64 = 0.0;
 
 #[allow(dead_code)]
 pub enum ColorMode {
@@ -20,12 +18,13 @@ pub struct MapGenerator {
     vert_size: (usize, usize),
     num_verts: usize,
     positions: Vec<Vec3>,
-    indeces: Vec<u32>,
+    indices: Vec<u32>,
     colors: Vec<Srgba>,
 }
 
+
 impl MapGenerator {
-    pub fn new(input_size: (usize, usize)) -> Self {
+    pub fn new(input_size: (usize, usize)) -> Self {        
         // check valid input
         assert!(input_size.0 % 2 == 0 && input_size.1 % 2 == 0); // Ensure the size is even so middle is at (0,0)
         assert!(input_size.0 > 0 && input_size.1 > 0);
@@ -37,7 +36,7 @@ impl MapGenerator {
             vert_size: v_size,
             num_verts: num_v,
             positions: Vec::with_capacity(num_v),
-            indeces: Vec::with_capacity(num_v),
+            indices: Vec::with_capacity(num_v),            
             colors: Vec::with_capacity(num_v),
         }
     }
@@ -47,7 +46,7 @@ impl MapGenerator {
 
         self.define_indences();
 
-        self.paint_my_mesh(colormode);
+        self.paint_my_mesh(colormode);     
     }
     /// Generate a mesh with a checkerboard pattern
     /// consumes self
@@ -55,31 +54,26 @@ impl MapGenerator {
         mut self,
         colormode: ColorMode,
         context: &Context,
-    ) -> Gm<Mesh, ColorMaterial> {
+    ) -> Gm<Mesh, PhysicalMaterial> {
         self.define_parameters(colormode);
 
-        let cpu_mesh = CpuMesh {
-            positions: Positions::F32(self.positions),
-            colors: Some(self.colors),
-            indices: Indices::U32(self.indeces),
-            ..Default::default()
-        };
-        // Construct a model, with a default color material, thereby transferring the mesh data to the GPU
-        return Gm::new(Mesh::new(context, &cpu_mesh), ColorMaterial::default());
+        self.generate(context)
     }
 
     /// generates a mesh form a MapGenerator, expexts the MapGenerator to have been initialized by reading from a file
     /// # panics
     /// panics if the MapGenerator has not been initialized by reading from a file
-    pub fn generate(self, context: &Context) -> Gm<Mesh, ColorMaterial> {
-        let cpu_mesh = CpuMesh {
+    pub fn generate(self, context: &Context) -> Gm<Mesh, PhysicalMaterial> {
+        let mut cpu_mesh = CpuMesh {
             positions: Positions::F32(self.positions),
             colors: Some(self.colors),
-            indices: Indices::U32(self.indeces),
+            indices: Indices::U32(self.indices),
+            //normals: Some(self.normals),
             ..Default::default()
         };
+        cpu_mesh.compute_normals();
         // Construct a model, with a default color material, thereby transferring the mesh data to the GPU
-        return Gm::new(Mesh::new(context, &cpu_mesh), ColorMaterial::default());
+        return Gm::new(Mesh::new(context, &cpu_mesh), PhysicalMaterial::default());
     }
 
     /// generate positions of the vertices
@@ -97,12 +91,11 @@ impl MapGenerator {
                 );
 
                 let nx = x as f64 / self.vert_size.0 as f64;
-                let ny = y as f64 / self.vert_size.1 as f64;
-                let nz = 0.0; // You can change this value to get different noise patterns
+                let ny = y as f64 / self.vert_size.1 as f64;                
 
-                let noise_value = noise.get([nx, ny, nz]);
-                let normalized_value = (noise_value + 1.0) / 2.0;
-                let height = normalized_value * (MAP_MAX_HEIGHT - MAP_MIN_HEIGHT) + MAP_MIN_HEIGHT;
+                let noise_value = noise.get([nx, ny]).abs(); // idk about this abs                
+                // let normalized_value = (noise_value + 1.0) / 2.0; // not sure about this
+                let height = noise_value * (MAP_MAX_HEIGHT - MAP_MIN_HEIGHT) + MAP_MIN_HEIGHT;
 
                 self.positions.push(vec3(
                     x as f32 - self.size.0 as f32 / 2.0,
@@ -121,18 +114,18 @@ impl MapGenerator {
                 let i = y * self.vert_size.0 + x;
                 if x < self.vert_size.0 - 1 && y < self.vert_size.1 - 1 {
                     // lower triangle of square
-                    self.indeces.push(i as u32); // bottom left
-                    self.indeces.push((i + 1) as u32); // bottom right
-                    self.indeces.push((i + self.vert_size.0) as u32); // top left
+                    self.indices.push(i as u32); // bottom left
+                    self.indices.push((i + 1) as u32); // bottom right
+                    self.indices.push((i + self.vert_size.0) as u32); // top left
 
                     // upper triangle of square
-                    self.indeces.push((i + self.vert_size.0) as u32); // top left
-                    self.indeces.push((i + 1) as u32); // bottom right
-                    self.indeces.push((i + self.vert_size.0 + 1) as u32); // top right
+                    self.indices.push((i + self.vert_size.0) as u32); // top left
+                    self.indices.push((i + 1) as u32); // bottom right
+                    self.indices.push((i + self.vert_size.0 + 1) as u32); // top right
                 }
             }
         }
-    }
+    }    
 
     /// paint the mesh with colors
     fn paint_my_mesh(&mut self, colormode: ColorMode) {
@@ -192,7 +185,7 @@ impl MapGenerator {
         writeln!(file, "positions: {}", pos_str).expect("Failed to write to file");
 
         let ind_str = self
-            .indeces
+            .indices
             .iter()
             .map(|index| index.to_string())
             .collect::<Vec<String>>()
@@ -304,7 +297,7 @@ impl MapGenerator {
                 vert_size,
                 num_verts,
                 positions,
-                indeces,
+                indices: indeces,
                 colors,
             })
         } else {
@@ -333,7 +326,7 @@ mod tests {
         assert_eq!(mapgen.vert_size, mapgen_from_file.vert_size);
         assert_eq!(mapgen.num_verts, mapgen_from_file.num_verts);
         assert_eq!(mapgen.positions, mapgen_from_file.positions);
-        assert_eq!(mapgen.indeces, mapgen_from_file.indeces);
+        assert_eq!(mapgen.indices, mapgen_from_file.indices);
         assert_eq!(mapgen.colors, mapgen_from_file.colors);
     }
 }
