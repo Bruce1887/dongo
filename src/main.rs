@@ -1,4 +1,6 @@
-use common::{CAM_START_FOV, CAM_START_POS, CAM_START_TARGET, CAM_START_UP, CAM_START_Z_FAR, CAM_START_Z_NEAR};
+use common::{
+    CAM_START_FOV, CAM_START_POS, CAM_START_TARGET, CAM_START_UP, CAM_START_Z_FAR, CAM_START_Z_NEAR,
+};
 use dongo::*;
 use std::{sync::Arc, vec};
 
@@ -10,6 +12,7 @@ pub fn main() {
     let window = Window::new(WindowSettings {
         title: "Dongo!".to_string(),
         max_size: Some((1280, 720)),
+        // borderless: true,
         ..Default::default()
     })
     .unwrap();
@@ -26,16 +29,28 @@ pub fn main() {
         CAM_START_Z_NEAR,
         CAM_START_Z_FAR,
     );
-    
+    let mut models: Arc<Vec<Gm<Mesh, ColorMaterial>>> = Arc::new(vec![]);
+
     let map_generator = MapGenerator::read_from_file(common::MAPFILE_PATH).unwrap();
     let map_model = map_generator.generate(&context);
+    Arc::get_mut(&mut models).unwrap().push(map_model);
+    
+    let mut cube_trimesh = CpuMesh::cube();
+    cube_trimesh.colors = Some(Vec::from([Srgba::RED; 36]));
 
-    let models = Arc::new(vec![map_model]);
+    cube_trimesh
+        .transform(&Mat4::from_translation(vec3(0.0, 0.0, 10.0)))
+        .expect("Failed to transform cube");
+
+    let cube_model = Gm::new(Mesh::new(&context, &cube_trimesh), ColorMaterial::default());
+    
+    Arc::get_mut(&mut models).unwrap().push(cube_model);
 
     let mut directional_light =
         renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(1.0, 0.0, -1.0));
     directional_light.generate_shadow_map(32, models.iter());
-    let EvHan = event_handler::EventHandler::new();
+
+    let mut ev_handler = event_handler::EventHandler::new();
     // Start the main render loop
     window.render_loop(
         move |frame_input| // Begin a new frame with an updated frame input
@@ -44,38 +59,21 @@ pub fn main() {
         camera.set_viewport(frame_input.viewport);
 
         // Check for events
-        EvHan.handle_events(&frame_input.events, &mut camera);                              
+        ev_handler.handle_events(&frame_input.events, &mut camera);
+        directional_light.generate_shadow_map(4, models.iter());
 
-        let objects = Arc::clone(&models);
+        let objects = Arc::clone(&models); // do i have to clone here? 
+
         // Get the screen render target to be able to render something on the screen
         frame_input.screen()
             // Clear the color and depth of the screen render target
             .clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 1.0, 1.0))
             // Render the triangle with the color material which uses the per vertex colors defined at construction
             .render(
-                &camera, (*objects).iter(), &[]
-            );            
+                &camera, (*objects).iter(), &[&directional_light]
+            );
         // Returns default frame output to end the frame
         FrameOutput::default()
-    },    
+    },
     );
 }
-
-/*
-for e in &frame_input.events {
-            if let Event::MouseWheel {delta, position: _, modifiers: _, handled: _} = e {
-                dbg!(camera.position());
-                //dbg!(delta, position, modifiers, handled);
-
-                let mut pos_clone = camera.position().clone();
-                let target_clone = camera.target().clone();
-                let up_clone = camera.up().clone();
-
-                pos_clone.z += delta.1;
-                dbg!(delta);
-                dbg!(pos_clone);
-                camera.set_view(pos_clone, target_clone, up_clone);
-                //camera.zoom_towards(&zoom_target, delta.0, 10.0, 50.0);
-            }
-        }
- */
