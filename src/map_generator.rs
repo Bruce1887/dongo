@@ -44,14 +44,18 @@ impl MapGenerator {
 
     pub fn define_parameters(&mut self, colormode: ColorMode) {
         self.define_positions();
-        
+
         self.define_indences();
-        
-        self.paint_my_mesh(colormode);        
+
+        self.paint_my_mesh(colormode);
     }
     /// Generate a mesh with a checkerboard pattern
     /// consumes self
-    pub fn generate_new(mut self, colormode: ColorMode, context: &Context) -> Gm<Mesh, ColorMaterial> {
+    pub fn generate_new(
+        mut self,
+        colormode: ColorMode,
+        context: &Context,
+    ) -> Gm<Mesh, ColorMaterial> {
         self.define_parameters(colormode);
 
         let cpu_mesh = CpuMesh {
@@ -67,8 +71,7 @@ impl MapGenerator {
     /// generates a mesh form a MapGenerator, expexts the MapGenerator to have been initialized by reading from a file
     /// # panics
     /// panics if the MapGenerator has not been initialized by reading from a file
-    pub fn generate(self, context: &Context) -> Gm<Mesh, ColorMaterial> {                
-
+    pub fn generate(self, context: &Context) -> Gm<Mesh, ColorMaterial> {
         let cpu_mesh = CpuMesh {
             positions: Positions::F32(self.positions),
             colors: Some(self.colors),
@@ -174,8 +177,7 @@ impl MapGenerator {
         }
     }
 
-    
-    pub fn write_to_file(&self) {                
+    pub fn write_to_file(&self) {
         let mut file = File::create(MAPFILE_PATH).expect("Failed to create file");
 
         // Write struct fields to file
@@ -186,10 +188,15 @@ impl MapGenerator {
         let mut pos_str = String::new();
         for v in &self.positions {
             pos_str.push_str(&format!("{},{},{},", v.x, v.y, v.z));
-        }        
-        writeln!(file, "positions: {}",pos_str).expect("Failed to write to file");
+        }
+        writeln!(file, "positions: {}", pos_str).expect("Failed to write to file");
 
-        let ind_str = self.indeces.iter().map(|index| index.to_string()).collect::<Vec<String>>().join(","); 
+        let ind_str = self
+            .indeces
+            .iter()
+            .map(|index| index.to_string())
+            .collect::<Vec<String>>()
+            .join(",");
         writeln!(file, "indeces: {}", ind_str).expect("Failed to write to file");
 
         let mut col_str = String::new();
@@ -205,7 +212,6 @@ impl MapGenerator {
 
         println!("Struct fields written to file");
     }
-
 
     pub fn read_from_file(filepath: &str) -> Result<MapGenerator, DongoError> {
         let mut file = match File::open(filepath) {
@@ -230,18 +236,18 @@ impl MapGenerator {
             if let Some(field) = parts.next() {
                 if let Some(value) = parts.next() {
                     match field.trim() {
-                        "size" => {                            
+                        "size" => {
                             let value = value.replace("(", "").replace(")", "").replace(" ", "");
                             let values: Vec<usize> =
-                                value.split(',').filter_map(|s| s.parse().ok()).collect();                            
+                                value.split(',').filter_map(|s| s.parse().ok()).collect();
                             if values.len() == 2 {
                                 size = Some((values[0], values[1]));
                             }
                         }
-                        "vert_size" => {                            
+                        "vert_size" => {
                             let value = value.replace("(", "").replace(")", "").replace(" ", "");
                             let values: Vec<usize> =
-                                value.split(',').filter_map(|s| s.parse().ok()).collect();                            
+                                value.split(',').filter_map(|s| s.parse().ok()).collect();
                             if values.len() == 2 {
                                 vert_size = Some((values[0], values[1]));
                             }
@@ -252,29 +258,30 @@ impl MapGenerator {
                             }
                         }
                         "positions" => {
-                            let values: Vec<&str> = value.split(",").collect();                            
+                            let values: Vec<&str> = value.split(",").collect();
                             let mut temp_pos = Vec::<Vec3>::new();
-                            for i in 0..values.len() / 3 {                                
-                                let x:f32 = values[i * 3].parse().unwrap();
-                                let y:f32 = values[i * 3 + 1].parse().unwrap();
-                                let z:f32 = values[i * 3 + 2].parse().unwrap();
-                                temp_pos.push(vec3(x, y, z));                                    
+                            for i in 0..values.len() / 3 {
+                                let x: f32 = values[i * 3].parse().unwrap();
+                                let y: f32 = values[i * 3 + 1].parse().unwrap();
+                                let z: f32 = values[i * 3 + 2].parse().unwrap();
+                                temp_pos.push(vec3(x, y, z));
                             }
                             positions = Some(temp_pos);
                         }
-                        "indeces" => {                            
-                            indeces = Some(value.split(",").filter_map(|s| s.parse().ok()).collect());
+                        "indeces" => {
+                            indeces =
+                                Some(value.split(",").filter_map(|s| s.parse().ok()).collect());
                         }
                         "colors" => {
-                            let values: Vec<&str> = value.split(",").collect();                            
+                            let values: Vec<&str> = value.split(",").collect();
                             let mut temp_col = Vec::<Srgba>::new();
-                            for i in 0..values.len() / 4 {                                
-                                let r:u8 = values[i * 4].parse().unwrap();
-                                let g:u8 = values[i * 4 + 1].parse().unwrap();
-                                let b:u8 = values[i * 4 + 2].parse().unwrap();
-                                let a:u8 = values[i * 4 + 3].parse().unwrap();                                
-                                temp_col.push(Srgba::new(r, g, b,a));                                    
-                            }                            
+                            for i in 0..values.len() / 4 {
+                                let r: u8 = values[i * 4].parse().unwrap();
+                                let g: u8 = values[i * 4 + 1].parse().unwrap();
+                                let b: u8 = values[i * 4 + 2].parse().unwrap();
+                                let a: u8 = values[i * 4 + 3].parse().unwrap();
+                                temp_col.push(Srgba::new(r, g, b, a));
+                            }
                             colors = Some(temp_col);
                         }
                         _ => {}
@@ -307,7 +314,7 @@ impl MapGenerator {
 }
 
 #[cfg(test)]
-mod tests {    
+mod tests {
     use super::*;
     use crate::error::ErrorMessage;
 
