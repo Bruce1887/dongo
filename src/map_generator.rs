@@ -1,4 +1,4 @@
-use crate::common::{print_loading_indicator, MAPFILE_PATH, MAP_MAX_HEIGHT, MAP_MIN_HEIGHT};
+use crate::common::*;
 use crate::error::DongoError;
 
 use noise::{NoiseFn, Perlin};
@@ -7,21 +7,19 @@ use three_d::*;
 
 use std::{fs::File, io::prelude::*};
 
-
 #[allow(dead_code)]
 pub enum ColorMode {
     HeightMap,
     Checkerboard,
 }
 pub struct MapGenerator {
-    size: (usize, usize),
-    vert_size: (usize, usize),
+    square_tuple: (usize, usize),
+    verts_tuple: (usize, usize),
     num_verts: usize,
     positions: Vec<Vec3>,
     indices: Vec<u32>,
     colors: Vec<Srgba>,
 }
-
 
 impl MapGenerator {
     pub fn new(input_size: (usize, usize)) -> Self {        
@@ -31,9 +29,9 @@ impl MapGenerator {
 
         let v_size = (input_size.0 + 1, input_size.1 + 1);
         let num_v = (input_size.0 + 1) * (input_size.1 + 1);
-        MapGenerator {
-            size: input_size,
-            vert_size: v_size,
+            MapGenerator {
+            square_tuple: input_size,
+            verts_tuple: v_size,
             num_verts: num_v,
             positions: Vec::with_capacity(num_v),
             indices: Vec::with_capacity(num_v),            
@@ -84,18 +82,16 @@ impl MapGenerator {
 
         let mut height_max: Option<f64> = None;
 
-        for y in 0..self.vert_size.1 {
-            for x in 0..self.vert_size.0 {
+        for y in 0..self.verts_tuple.1 {
+            for x in 0..self.verts_tuple.0 {
 
-                print_loading_indicator((y * self.vert_size.0 + x + 1) as f32, self.num_verts as f32);
+                print_loading_indicator((y * self.verts_tuple.0 + x + 1) as f32, self.num_verts as f32);
 
-                let nx = x as f64 / self.vert_size.0 as f64;
-                let ny = y as f64 / self.vert_size.1 as f64;                
+                let nx = x as f64 / self.verts_tuple.0 as f64;
+                let ny = y as f64 / self.verts_tuple.1 as f64;
                 
-                let noise_value = noise.get([nx, ny]); // returns a value between -1 and 1
-
+                let noise_value = noise.get([nx * MAP_PERLIN_NOISE_FACTOR, ny * MAP_PERLIN_NOISE_FACTOR]); // returns a value between -1 and 1
                 let normalized_value = (noise_value + 1.0) / 2.0; // set value between 0 and 1
-
                 let height = normalized_value * (MAP_MAX_HEIGHT - MAP_MIN_HEIGHT) + MAP_MIN_HEIGHT;
 
                 match height_max{
@@ -103,9 +99,11 @@ impl MapGenerator {
                     Some(max) => if height > max {height_max = Some(height)}
                 }
 
+                let pos_x = (x as f32 - self.square_tuple.0 as f32 / 2.0) * MAP_VERTEX_DISTANCE;
+                let pos_y = (y as f32 - self.square_tuple.1 as f32 / 2.0) * MAP_VERTEX_DISTANCE;
                 self.positions.push(vec3(
-                    x as f32 - self.size.0 as f32 / 2.0,
-                    y as f32 - self.size.1 as f32 / 2.0,
+                    pos_x,
+                    pos_y,
                     height as f32,
                 ));
             }
@@ -116,19 +114,20 @@ impl MapGenerator {
     /// generate indices of the vertices
     fn define_indences(&mut self) {
         // define the indices of the vertices
-        for y in 0..self.vert_size.1 {
-            for x in 0..self.vert_size.0 {
-                let i = y * self.vert_size.0 + x;
-                if x < self.vert_size.0 - 1 && y < self.vert_size.1 - 1 {
+        for y in 0..self.verts_tuple.1 {
+            for x in 0..self.verts_tuple.0 {
+                let i = y * self.verts_tuple.0 + x;
+                if x < self.verts_tuple.0 - 1 && y < self.verts_tuple.1 - 1 {
+
                     // lower triangle of square
-                    self.indices.push(i as u32); // bottom left
                     self.indices.push((i + 1) as u32); // bottom right
-                    self.indices.push((i + self.vert_size.0) as u32); // top left
+                    self.indices.push(i as u32); // bottom left
+                    self.indices.push((i + self.verts_tuple.0) as u32); // top left
 
                     // upper triangle of square
-                    self.indices.push((i + self.vert_size.0) as u32); // top left
                     self.indices.push((i + 1) as u32); // bottom right
-                    self.indices.push((i + self.vert_size.0 + 1) as u32); // top right
+                    self.indices.push((i + self.verts_tuple.0) as u32); // top left
+                    self.indices.push((i + self.verts_tuple.0 + 1) as u32); // top right
                 }
             }
         }
@@ -144,31 +143,31 @@ impl MapGenerator {
                     let height = self.positions[i].z;
                     if height < (height_range / 4.0) as f32 {
                         // lowest 25% of the height range
-                        self.colors.push(Srgba::BLACK);
+                        self.colors.push(DONGOCOLOR_GRAY);
                     } else if height < (height_range / 2.0) as f32 {
                         // 25% to 50% of the height range
-                        self.colors.push(Srgba::BLUE);
+                        self.colors.push(DONGOCOLOR_BLUE);
                     } else if height < (3.0 * height_range / 4.0) as f32 {
                         // 50% to 75% of the height range
-                        self.colors.push(Srgba::GREEN);
+                        self.colors.push(DONGOCOLOR_GREEN);
                     } else {
                         // highest 25% of the height range
-                        self.colors.push(Srgba::WHITE);
+                        self.colors.push(DONGOCOLOR_WHITE);
                     }
                 }
             }
             ColorMode::Checkerboard => {
                 // strange symmetrical color pattern, kinda useful
-                for i in 0..self.vert_size.0 {
-                    for j in 0..self.vert_size.1 {
+                for i in 0..self.verts_tuple.0 {
+                    for j in 0..self.verts_tuple.1 {
                         let color = if i % 2 == 0 && j % 2 == 0 {
-                            Srgba::BLACK
+                            DONGOCOLOR_BLACK
                         } else if i % 2 == 0 && j % 2 == 1 {
-                            Srgba::RED
+                            DONGOCOLOR_RED
                         } else if i % 2 == 1 && j % 2 == 0 {
-                            Srgba::BLUE
+                            DONGOCOLOR_BLUE
                         } else {
-                            Srgba::WHITE
+                            DONGOCOLOR_WHITE
                         };
                         self.colors.push(color);
                     }
@@ -181,8 +180,8 @@ impl MapGenerator {
         let mut file = File::create(MAPFILE_PATH).expect("Failed to create file");
 
         // Write struct fields to file
-        writeln!(file, "size: {:?}", self.size).expect("Failed to write to file");
-        writeln!(file, "vert_size: {:?}", self.vert_size).expect("Failed to write to file");
+        writeln!(file, "size: {:?}", self.square_tuple).expect("Failed to write to file");
+        writeln!(file, "vert_size: {:?}", self.verts_tuple).expect("Failed to write to file");
         writeln!(file, "num_verts: {:?}", self.num_verts).expect("Failed to write to file");
 
         let mut pos_str = String::new();
@@ -300,8 +299,8 @@ impl MapGenerator {
         ) = (size, vert_size, num_verts, positions, indeces, colors)
         {
             Ok(MapGenerator {
-                size,
-                vert_size,
+                square_tuple: size,
+                verts_tuple: vert_size,
                 num_verts,
                 positions,
                 indices: indeces,
@@ -329,8 +328,8 @@ mod tests {
             panic!("Error reading from file: {}", e.error_message());
         }
         let mapgen_from_file = maybe_mapgen_from_file.unwrap();
-        assert_eq!(mapgen.size, mapgen_from_file.size);
-        assert_eq!(mapgen.vert_size, mapgen_from_file.vert_size);
+        assert_eq!(mapgen.square_tuple, mapgen_from_file.square_tuple);
+        assert_eq!(mapgen.verts_tuple, mapgen_from_file.verts_tuple);
         assert_eq!(mapgen.num_verts, mapgen_from_file.num_verts);
         assert_eq!(mapgen.positions, mapgen_from_file.positions);
         assert_eq!(mapgen.indices, mapgen_from_file.indices);

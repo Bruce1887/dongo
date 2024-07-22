@@ -18,7 +18,7 @@ impl EventHandler {
         }
     }
 
-    pub fn handle_events(&mut self, events: &Vec<Event>, camera: &mut Camera) {
+    pub fn handle_events(&mut self, events: &Vec<Event>, camera: &mut Camera, context: &Context, objects: &Vec<Box<dyn Object>>, map_object: &Gm<Mesh,PhysicalMaterial>, pick_mesh: &mut Gm<Mesh,PhysicalMaterial>) {
         for ev in events {
             //dbg!(ev);
             match ev {
@@ -70,14 +70,18 @@ impl EventHandler {
                     modifiers: _,
                     handled: _,
                 } => crate::camera_controller::zoom_camera(camera, delta),
-                Event::MousePress { button , position, modifiers, handled } => {
+                Event::MousePress { button , position, modifiers: _, handled: _ } => {
 
                     if *button == MouseButton::Left {
-                        println!("MousePress: button: {:?}, position: {:?}, modifiers: {:?}, handled: {:?}", button, position, modifiers, handled);
-                        dbg!(position);
-                        let world_pos = camera.position_at_pixel(*position);
-                        dbg!("World position: {:?}", world_pos);
-                        dbg!(camera.view_direction_at_pixel(*position));
+                        // objects
+                        if let Some(pick) = pick(context, &camera, *position, objects.iter().map(|obj| &**obj).collect::<Vec<&dyn Object>>()) {                            
+                            pick_mesh.set_transformation(Mat4::from_translation(pick));
+                        }
+                        // map
+                        else if let Some(pick) = pick(context,&camera,*position, map_object) {
+                            pick_mesh.set_transformation(Mat4::from_translation(pick));
+                        }
+
                     }
 
                 }
