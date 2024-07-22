@@ -3,7 +3,8 @@ use three_d::*;
 
 #[derive(Default)]
 pub struct EventHandler {
-    wasd_down: (bool, bool, bool, bool),
+    wasd_down: (bool, bool, bool, bool), // camera movement
+    qe_down: (bool, bool), // camera rotation 
     shift_down: bool,
     ctrl_down: bool,
     alt_down: bool,
@@ -22,7 +23,10 @@ impl EventHandler {
             //dbg!(ev);
             match ev {
                 Event::ModifiersChange { modifiers } => {
-                    self.modifiers_updated(modifiers);
+                    // update modifier fields in struct
+                    self.shift_down = modifiers.shift;
+                    self.ctrl_down = modifiers.ctrl;
+                    self.alt_down = modifiers.alt;
                 }
                 Event::KeyPress {
                     kind,
@@ -35,57 +39,94 @@ impl EventHandler {
                         println!("Ctrl + W pressed. Exiting application...");
                         std::process::exit(0);
                     }
+
+                    if *kind == Key::ArrowUp{
+                        crate::camera_controller::zoom_camera(camera, &(28.0,28.0))
+                    }
+                    
+                    if *kind == Key::ArrowDown{
+                        crate::camera_controller::zoom_camera(camera, &(-28.0,-28.0))
+                    }
+
+                    if *kind == Key::Num0{ // reset camera position and stuff. for debug
+                        camera.set_view(CAM_START_POS, CAM_START_TARGET, CAM_START_UP);
+                    }
+
                 }
                 Event::KeyRelease {
-                    kind: _,
+                    kind,
                     modifiers: _,
                     handled: _,
                 } => {
                     self.check_keys_down(ev);
+
+                    if *kind == Key::Q  {
+                        crate::camera_controller::rotate_camera(camera);
+                    }
                 }
                 Event::MouseWheel {
                     delta,
                     position: _,
                     modifiers: _,
                     handled: _,
-                } => Self::zoom_camera(camera, delta),
+                } => crate::camera_controller::zoom_camera(camera, delta),
+                Event::MousePress { button , position, modifiers, handled } => {
+
+                    if *button == MouseButton::Left {
+                        println!("MousePress: button: {:?}, position: {:?}, modifiers: {:?}, handled: {:?}", button, position, modifiers, handled);
+                        dbg!(position);
+                        let world_pos = camera.position_at_pixel(*position);
+                        dbg!("World position: {:?}", world_pos);
+                        dbg!(camera.view_direction_at_pixel(*position));
+                        camera.
+                    }
+
+                }
                 _ => (),
             }
-        }
-        if self.check_wasd() {
-            self.move_camera(camera);
-        }
-    }
+        }        
+        
+        // check if any of the wasd keys are down, if so move the camera
+        if self.wasd_down.0 || self.wasd_down.1 || self.wasd_down.2 || self.wasd_down.3 {
+            // I think it is good practice if these are set in order
+            let mut direction = Vec3::new(0.0, 0.0, 0.0);
+            if self.wasd_down.0 {
+                direction.y += 1.0;
+            }
+            if self.wasd_down.1 {
+                direction.x -= 1.0;
+            }
+            if self.wasd_down.2 {
+                direction.y -= 1.0;
+            }
+            if self.wasd_down.3 {
+                direction.x += 1.0;
+            }
+            let speed = if self.shift_down {
+                CAMERA_MOVE_SPEED * CAMERA_SHIFT_FACTOR
+            } else {
+                CAMERA_MOVE_SPEED
+            };
 
-    fn modifiers_updated(&mut self, modifiers: &Modifiers) {
-        self.shift_down = modifiers.shift;
-        self.ctrl_down = modifiers.ctrl;
-        self.alt_down = modifiers.alt;
-        // self.cmd_down = modifiers.command; // command is the ctrl key on windows and linux
-    }
+            crate::camera_controller::move_camera(camera, direction, speed);
+        }
+        if self.qe_down.0 || self.qe_down.1 {
+            //self.rotate_camera(camera);
+        }
+    }    
 
     fn check_keys_down(&mut self, ev: &Event) {
         let value: bool;
         let key: Key;
-        match ev {
-            Event::KeyPress {
-                kind,
-                modifiers: _,
-                handled: _,
-            } => {
-                key = *kind;
-                value = true;
-            }
-            Event::KeyRelease {
-                kind,
-                modifiers: _,
-                handled: _,
-            } => {
-                key = *kind;
-                value = false;
-            }
-            _ => panic!("Event is not a key event (KeyPress or KeyRelease)"),
-        };
+        if let Event::KeyPress { kind, modifiers: _, handled: _ } = ev {
+            key = *kind;
+            value = true;
+        } else if let Event::KeyRelease { kind, modifiers: _, handled: _ } = ev {
+            key = *kind;
+            value = false;
+        } else {
+            panic!("Event is not a key event (KeyPress or KeyRelease)");
+        }
 
         // camera movement
         match key {
@@ -93,54 +134,9 @@ impl EventHandler {
             Key::A => self.wasd_down.1 = value,
             Key::S => self.wasd_down.2 = value,
             Key::D => self.wasd_down.3 = value,
+            Key::Q => self.qe_down.0 = value,
+            Key::E => self.qe_down.1 = value,
             _ => (),
         }
-    }
-
-    fn check_wasd(&self) -> bool {
-        self.wasd_down.0 || self.wasd_down.1 || self.wasd_down.2 || self.wasd_down.3
-    }
-
-    fn zoom_camera(camera: &mut Camera, delta: &(f32, f32)) {
-        let mut pos_clone = camera.position().clone();
-        let target_clone = camera.target().clone();
-        let up_clone = camera.up().clone();
-
-        pos_clone.z -= delta.1; // delta.1 is positive when scrolling "up" (zooming in)
-        pos_clone.z = pos_clone.z.clamp(CAMERA_MIN_ZOOM, CAMERA_MAX_ZOOM);
-
-        camera.set_view(pos_clone, target_clone, up_clone);
-    }
-
-    fn move_camera(&self, camera: &mut Camera) {
-        // I think it is good practice if these are set in order
-        let mut direction = Vec3::new(0.0, 0.0, 0.0);
-        if self.wasd_down.0 {
-            direction.y += 1.0;
-        }
-        if self.wasd_down.1 {
-            direction.x -= 1.0;
-        }
-        if self.wasd_down.2 {
-            direction.y -= 1.0;
-        }
-        if self.wasd_down.3 {
-            direction.x += 1.0;
-        }
-        let speed = if self.shift_down {
-            CAMERA_MOVE_SPEED * CAMERA_SHIFT_FACTOR
-        } else {
-            CAMERA_MOVE_SPEED
-        };
-
-        let mut pos_clone = camera.position().clone();
-        pos_clone += direction * speed;
-
-        let mut target = pos_clone;
-        target.z = 0.0;
-
-        let up_clone = camera.up().clone();
-
-        camera.set_view(pos_clone, target, up_clone);
     }
 }
