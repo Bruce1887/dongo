@@ -1,4 +1,4 @@
-use crate::common::{MAPFILE_PATH, MAP_MAX_HEIGHT, MAP_MIN_HEIGHT};
+use crate::common::{print_loading_indicator, MAPFILE_PATH, MAP_MAX_HEIGHT, MAP_MIN_HEIGHT};
 use crate::error::DongoError;
 
 use noise::{NoiseFn, Perlin};
@@ -82,20 +82,26 @@ impl MapGenerator {
         let seed: u32 = rng.gen();
         let noise = Perlin::new(seed);
 
+        let mut height_max: Option<f64> = None;
+
         for y in 0..self.vert_size.1 {
             for x in 0..self.vert_size.0 {
-                println!(
-                    "generating position: {} / {}",
-                    y * self.vert_size.0 + x + 1,
-                    self.num_verts
-                );
+
+                print_loading_indicator((y * self.vert_size.0 + x + 1) as f32, self.num_verts as f32);
 
                 let nx = x as f64 / self.vert_size.0 as f64;
                 let ny = y as f64 / self.vert_size.1 as f64;                
+                
+                let noise_value = noise.get([nx, ny]); // returns a value between -1 and 1
 
-                let noise_value = noise.get([nx, ny]).abs(); // idk about this abs                
-                // let normalized_value = (noise_value + 1.0) / 2.0; // not sure about this
-                let height = noise_value * (MAP_MAX_HEIGHT - MAP_MIN_HEIGHT) + MAP_MIN_HEIGHT;
+                let normalized_value = (noise_value + 1.0) / 2.0; // set value between 0 and 1
+
+                let height = normalized_value * (MAP_MAX_HEIGHT - MAP_MIN_HEIGHT) + MAP_MIN_HEIGHT;
+
+                match height_max{
+                    None => height_max = Some(height),
+                    Some(max) => if height > max {height_max = Some(height)}
+                }
 
                 self.positions.push(vec3(
                     x as f32 - self.size.0 as f32 / 2.0,
@@ -104,6 +110,7 @@ impl MapGenerator {
                 ));
             }
         }
+        dbg!(height_max);
     }
 
     /// generate indices of the vertices

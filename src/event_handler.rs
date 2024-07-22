@@ -41,36 +41,77 @@ impl EventHandler {
                     }
 
                     if *kind == Key::ArrowUp{
-                        Self::zoom_camera(camera, &(28.0,28.0))
+                        crate::camera_controller::zoom_camera(camera, &(28.0,28.0))
                     }
                     
                     if *kind == Key::ArrowDown{
-                        Self::zoom_camera(camera, &(-28.0,-28.0))
+                        crate::camera_controller::zoom_camera(camera, &(-28.0,-28.0))
+                    }
+
+                    if *kind == Key::Num0{ // reset camera position and stuff. for debug
+                        camera.set_view(CAM_START_POS, CAM_START_TARGET, CAM_START_UP);
                     }
 
                 }
                 Event::KeyRelease {
-                    kind: _,
+                    kind,
                     modifiers: _,
                     handled: _,
                 } => {
                     self.check_keys_down(ev);
+
+                    if *kind == Key::Q  {
+                        crate::camera_controller::rotate_camera(camera);
+                    }
                 }
                 Event::MouseWheel {
                     delta,
                     position: _,
                     modifiers: _,
                     handled: _,
-                } => Self::zoom_camera(camera, delta),
+                } => crate::camera_controller::zoom_camera(camera, delta),
+                Event::MousePress { button , position, modifiers, handled } => {
+
+                    if *button == MouseButton::Left {
+                        println!("MousePress: button: {:?}, position: {:?}, modifiers: {:?}, handled: {:?}", button, position, modifiers, handled);
+                        dbg!(position);
+                        let world_pos = camera.position_at_pixel(*position);
+                        dbg!("World position: {:?}", world_pos);
+                        dbg!(camera.view_direction_at_pixel(*position));
+                        camera.
+                    }
+
+                }
                 _ => (),
             }
         }        
         
+        // check if any of the wasd keys are down, if so move the camera
         if self.wasd_down.0 || self.wasd_down.1 || self.wasd_down.2 || self.wasd_down.3 {
-            self.move_camera(camera);
+            // I think it is good practice if these are set in order
+            let mut direction = Vec3::new(0.0, 0.0, 0.0);
+            if self.wasd_down.0 {
+                direction.y += 1.0;
+            }
+            if self.wasd_down.1 {
+                direction.x -= 1.0;
+            }
+            if self.wasd_down.2 {
+                direction.y -= 1.0;
+            }
+            if self.wasd_down.3 {
+                direction.x += 1.0;
+            }
+            let speed = if self.shift_down {
+                CAMERA_MOVE_SPEED * CAMERA_SHIFT_FACTOR
+            } else {
+                CAMERA_MOVE_SPEED
+            };
+
+            crate::camera_controller::move_camera(camera, direction, speed);
         }
         if self.qe_down.0 || self.qe_down.1 {
-            self.rotate_camera(camera);
+            //self.rotate_camera(camera);
         }
     }    
 
@@ -97,73 +138,5 @@ impl EventHandler {
             Key::E => self.qe_down.1 = value,
             _ => (),
         }
-    }
-
-    fn zoom_camera(camera: &mut Camera, delta: &(f32, f32)) {
-        let mut pos_clone = camera.position().clone();
-        let target_clone = camera.target().clone();
-        let up_clone = camera.up().clone();
-
-        pos_clone.z -= delta.1; // delta.1 is positive when scrolling "up" (zooming in)
-        pos_clone.z = pos_clone.z.clamp(CAMERA_MIN_ZOOM, CAMERA_MAX_ZOOM);
-
-        camera.set_view(pos_clone, target_clone, up_clone);
-    }
-
-    fn rotate_camera(&self, camera: &mut Camera) {
-        let target = camera.target().clone();
-        let distance = Vec3::distance(target, camera.position().clone());        
-    
-        dbg!(distance);
-        let direction = if self.qe_down.0 {
-            1.0
-        } else {
-            -1.0
-        };
-        
-        let angle_rad : f32 = 0.017; // approximately 1 degree (0.0174533)
-        let new_x = distance  * angle_rad.sin() + camera.position().x;
-        let new_y = distance  * angle_rad.cos() + camera.position().y;
-        
-        let new_pos = Vec3::new(new_x, new_y, camera.position().z);
-    
-        dbg!(camera.position());
-        dbg!(new_pos);
-        
-        let up = camera.up().clone();
-    
-        camera.set_view(new_pos, target, up);
-    }
-    fn move_camera(&self, camera: &mut Camera) {
-        // I think it is good practice if these are set in order
-        let mut direction = Vec3::new(0.0, 0.0, 0.0);
-        if self.wasd_down.0 {
-            direction.y += 1.0;
-        }
-        if self.wasd_down.1 {
-            direction.x -= 1.0;
-        }
-        if self.wasd_down.2 {
-            direction.y -= 1.0;
-        }
-        if self.wasd_down.3 {
-            direction.x += 1.0;
-        }
-        let speed = if self.shift_down {
-            CAMERA_MOVE_SPEED * CAMERA_SHIFT_FACTOR
-        } else {
-            CAMERA_MOVE_SPEED
-        };
-
-        let mut pos_clone = camera.position().clone();
-        pos_clone += direction * speed;
-
-        let mut target = pos_clone;
-        target.z = 0.0;
-        target += CAM_START_TARGET;
-
-        let up_clone = camera.up().clone();
-
-        camera.set_view(pos_clone, target, up_clone);
     }
 }
