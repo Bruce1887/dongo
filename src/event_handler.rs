@@ -78,7 +78,6 @@ impl EventHandler {
                         let world_pos = camera.position_at_pixel(*position);
                         dbg!("World position: {:?}", world_pos);
                         dbg!(camera.view_direction_at_pixel(*position));
-                        camera.
                     }
 
                 }
