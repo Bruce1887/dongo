@@ -22,8 +22,8 @@ impl DongoGlobals {
     pub fn map_object(&self) -> &Gm<Mesh,PhysicalMaterial> {
         &self.map
     }
-    
-    pub fn all_objects(&self) -> Vec<&dyn Object> {       
+
+    pub fn all_objects(&self) -> Vec<&dyn Object> {
         self.objects.iter().map(|obj| &**obj).collect::<Vec<&dyn Object>>()
     }
 

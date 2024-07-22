@@ -4,7 +4,7 @@ use three_d::*;
 #[derive(Default)]
 pub struct EventHandler {
     wasd_down: (bool, bool, bool, bool), // camera movement
-    qe_down: (bool, bool), // camera rotation 
+    qe_down: (bool, bool),               // camera rotation
     shift_down: bool,
     ctrl_down: bool,
     alt_down: bool,
@@ -18,7 +18,15 @@ impl EventHandler {
         }
     }
 
-    pub fn handle_events(&mut self, events: &Vec<Event>, camera: &mut Camera, context: &Context, objects: &Vec<Box<dyn Object>>, map_object: &Gm<Mesh,PhysicalMaterial>, pick_mesh: &mut Gm<Mesh,PhysicalMaterial>) {
+    pub fn handle_events(
+        &mut self,
+        events: &Vec<Event>,
+        camera: &mut Camera,
+        context: &Context,
+        objects: &Vec<Box<dyn Object>>,
+        map_object: &Gm<Mesh, PhysicalMaterial>,
+        pick_mesh: &mut Gm<Mesh, PhysicalMaterial>,
+    ) {
         for ev in events {
             //dbg!(ev);
             match ev {
@@ -40,18 +48,18 @@ impl EventHandler {
                         std::process::exit(0);
                     }
 
-                    if *kind == Key::ArrowUp{
-                        crate::camera_controller::zoom_camera(camera, &(28.0,28.0))
-                    }
-                    
-                    if *kind == Key::ArrowDown{
-                        crate::camera_controller::zoom_camera(camera, &(-28.0,-28.0))
+                    if *kind == Key::ArrowUp {
+                        crate::camera_controller::zoom_camera(camera, &(28.0, 28.0))
                     }
 
-                    if *kind == Key::Num0{ // reset camera position and stuff. for debug
+                    if *kind == Key::ArrowDown {
+                        crate::camera_controller::zoom_camera(camera, &(-28.0, -28.0))
+                    }
+
+                    if *kind == Key::Num0 {
+                        // reset camera position and stuff. for debug
                         camera.set_view(CAM_START_POS, CAM_START_TARGET, CAM_START_UP);
                     }
-
                 }
                 Event::KeyRelease {
                     kind,
@@ -60,7 +68,7 @@ impl EventHandler {
                 } => {
                     self.check_keys_down(ev);
 
-                    if *kind == Key::Q  {
+                    if *kind == Key::Q {
                         crate::camera_controller::rotate_camera(camera);
                     }
                 }
@@ -70,25 +78,35 @@ impl EventHandler {
                     modifiers: _,
                     handled: _,
                 } => crate::camera_controller::zoom_camera(camera, delta),
-                Event::MousePress { button , position, modifiers: _, handled: _ } => {
-
+                Event::MousePress {
+                    button,
+                    position,
+                    modifiers: _,
+                    handled: _,
+                } => {
                     if *button == MouseButton::Left {
                         // objects
-                        if let Some(pick) = pick(context, &camera, *position, objects.iter().map(|obj| &**obj).collect::<Vec<&dyn Object>>()) {                            
+                        if let Some(pick) = pick(
+                            context,
+                            &camera,
+                            *position,
+                            objects
+                                .iter()
+                                .map(|obj| &**obj)
+                                .collect::<Vec<&dyn Object>>(),
+                        ) {
                             pick_mesh.set_transformation(Mat4::from_translation(pick));
                         }
                         // map
-                        else if let Some(pick) = pick(context,&camera,*position, map_object) {
+                        else if let Some(pick) = pick(context, &camera, *position, map_object) {
                             pick_mesh.set_transformation(Mat4::from_translation(pick));
                         }
-
                     }
-
                 }
                 _ => (),
             }
-        }        
-        
+        }
+
         // check if any of the wasd keys are down, if so move the camera
         if self.wasd_down.0 || self.wasd_down.1 || self.wasd_down.2 || self.wasd_down.3 {
             // I think it is good practice if these are set in order
@@ -116,15 +134,25 @@ impl EventHandler {
         if self.qe_down.0 || self.qe_down.1 {
             //self.rotate_camera(camera);
         }
-    }    
+    }
 
     fn check_keys_down(&mut self, ev: &Event) {
         let value: bool;
         let key: Key;
-        if let Event::KeyPress { kind, modifiers: _, handled: _ } = ev {
+        if let Event::KeyPress {
+            kind,
+            modifiers: _,
+            handled: _,
+        } = ev
+        {
             key = *kind;
             value = true;
-        } else if let Event::KeyRelease { kind, modifiers: _, handled: _ } = ev {
+        } else if let Event::KeyRelease {
+            kind,
+            modifiers: _,
+            handled: _,
+        } = ev
+        {
             key = *kind;
             value = false;
         } else {

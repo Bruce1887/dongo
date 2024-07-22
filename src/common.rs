@@ -36,10 +36,10 @@ pub const DONGOCOLOR_WHITE: Srgba = Srgba::new(255, 255, 255, 255);
 pub const DONGOCOLOR_GRAY: Srgba = Srgba::new(100, 100, 100, 255);
 
 // loading indicator stuff
-pub fn print_loading_indicator(current: f32, goal: f32){
+pub fn print_loading_indicator(current: f32, goal: f32) {
     //clear_screen();
     println!("Loading... {:.2}%", current / goal * 100.0);
-}   
+}
 
 fn _clear_screen() {
     // ANSI escape code to clear the screen

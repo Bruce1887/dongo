@@ -6,7 +6,14 @@ use map_generator::*;
 use three_d::*;
 
 pub fn main() {
-    
+    let event_loop = winit::event_loop::EventLoop::new();
+    let window_builder = winit::window::WindowBuilder::new()
+        .with_title("winit window")
+        .with_min_inner_size(winit::dpi::LogicalSize::new(1280, 720))
+        .with_maximized(false);
+
+    let window = window_builder.build(&event_loop).unwrap();
+    /*
     // Create a window (a canvas on web)
     let window = Window::new(WindowSettings {
         title: "Dongo!".to_string(),
@@ -14,17 +21,16 @@ pub fn main() {
         max_size: Some((1280, 720)),
         borderless: false,
         surface_settings: Default::default(),
-    })
-    .unwrap();
-
+        })
+        .unwrap();
+    */
+    
     // Get the graphics context from the window
-    let context = window.gl();
-    context.set_cull(Cull::FrontAndBack);
-
-    dbg!(&context);
+    let context = WindowedContext::from_winit_window(&window, SurfaceSettings::default()).unwrap();
+    context.set_cull(Cull::Back);
 
     let mut camera = Camera::new_perspective(
-        window.viewport(),
+        Viewport::new_at_origo(1, 1),
         CAM_START_POS,
         CAM_START_TARGET,
         CAM_START_UP,
@@ -33,11 +39,10 @@ pub fn main() {
         CAM_START_Z_FAR,
     );
 
-
     let mut objects: Vec<Box<dyn Object>> = Vec::new();
-    
+
     let map_generator = MapGenerator::read_from_file(common::MAPFILE_PATH).unwrap();
-    let map_obj = map_generator.generate(&context);    
+    let map_obj = map_generator.generate(&context);
 
     let sphere = CpuMesh::sphere(8);
     let mut pick_mesh = Gm::new(
@@ -53,25 +58,92 @@ pub fn main() {
 
     // let mut square_trimesh =CpuMesh::square();
     // square_trimesh.transform(&Mat4::from_scale(300.0))
-    
+
     let mut cube_trimesh = CpuMesh::cube();
     cube_trimesh.colors = Some(Vec::from([DONGOCOLOR_RED; 36]));
 
     cube_trimesh
-        .transform(&Mat4::from_translation(vec3(0.0, 0.0, MAP_MAX_HEIGHT as f32 + 1.0)))
+        .transform(&Mat4::from_translation(vec3(
+            0.0,
+            0.0,
+            MAP_MAX_HEIGHT as f32 + 1.0,
+        )))
         .expect("Failed to transform cube");
 
-    let cube_obj = Gm::new(Mesh::new(&context, &cube_trimesh), PhysicalMaterial::default());
-    
+    let cube_obj = Gm::new(
+        Mesh::new(&context, &cube_trimesh),
+        PhysicalMaterial::default(),
+    );
+
     objects.push(Box::new(cube_obj));
 
     let mut directional_light =
-        renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(1.0, 0.0, -1.0));    
+        renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(1.0, 0.0, -1.0));
 
     let ambient_light = renderer::light::AmbientLight::new(&context, 0.05, Srgba::WHITE);
 
     let mut ev_handler = event_handler::EventHandler::new();
 
+    // Event loop
+    let mut frame_input_generator = FrameInputGenerator::from_winit_window(&window);
+    event_loop.run(move |event, _, control_flow| match event {
+        winit::event::Event::MainEventsCleared => {
+            window.request_redraw();
+        }
+        winit::event::Event::RedrawRequested(_) => {
+            let frame_input = frame_input_generator.generate(&context);
+
+            // Ensure the viewport matches the current window viewport which changes if the window is resized
+            camera.set_viewport(frame_input.viewport);
+
+            // Check for events
+            ev_handler.handle_events(
+                &frame_input.events,
+                &mut camera,
+                &context,
+                &objects,
+                &map_obj,
+                &mut pick_mesh,
+            );
+            let mut obj_vec = objects
+                .iter()
+                .map(|obj| &**obj)
+                .collect::<Vec<&dyn Object>>();
+
+            directional_light.generate_shadow_map(256, &obj_vec);
+            obj_vec.push(&pick_mesh);
+
+            frame_input
+                .screen()
+                .clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 1.0, 1.0))
+                .render(
+                    &camera,
+                    map_obj.into_iter().chain(obj_vec).chain(&pick_mesh),
+                    &[&directional_light, &ambient_light],
+                );
+
+            context.swap_buffers().unwrap();
+            control_flow.set_poll();
+            window.request_redraw();
+        }
+        winit::event::Event::WindowEvent { ref event, .. } => {
+            frame_input_generator.handle_winit_window_event(event);
+            match event {
+                winit::event::WindowEvent::Resized(physical_size) => {
+                    context.resize(*physical_size);
+                }
+                winit::event::WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
+                    context.resize(**new_inner_size);
+                }
+                winit::event::WindowEvent::CloseRequested => {
+                    control_flow.set_exit();
+                }
+                _ => (),
+            }
+        }
+        _ => {}
+    });
+    /*
     // Start the main render loop
     window.render_loop(
         move |frame_input| // Begin a new frame with an updated frame input
@@ -83,7 +155,7 @@ pub fn main() {
         ev_handler.handle_events(&frame_input.events, &mut camera, &context, &objects, &map_obj,&mut pick_mesh);
         let mut obj_vec = objects.iter().map(|obj| &**obj).collect::<Vec<&dyn Object>>();
 
-        
+
         directional_light.generate_shadow_map(256, &obj_vec);
         obj_vec.push(&pick_mesh);
 
@@ -92,7 +164,7 @@ pub fn main() {
         frame_input.screen()
             // Clear the color and depth of the screen render target
             .clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 1.0, 1.0))
-           
+
            /*
            .render(
                 &camera, map_obj.into_iter().chain(obj_vec).chain(&pick_mesh), &[&directional_light,&ambient_light]
@@ -105,4 +177,5 @@ pub fn main() {
         FrameOutput::default()
     },
     );
+    */
 }

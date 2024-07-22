@@ -22,19 +22,19 @@ pub struct MapGenerator {
 }
 
 impl MapGenerator {
-    pub fn new(input_size: (usize, usize)) -> Self {        
+    pub fn new(input_size: (usize, usize)) -> Self {
         // check valid input
         assert!(input_size.0 % 2 == 0 && input_size.1 % 2 == 0); // Ensure the size is even so middle is at (0,0)
         assert!(input_size.0 > 0 && input_size.1 > 0);
 
         let v_size = (input_size.0 + 1, input_size.1 + 1);
         let num_v = (input_size.0 + 1) * (input_size.1 + 1);
-            MapGenerator {
+        MapGenerator {
             square_tuple: input_size,
             verts_tuple: v_size,
             num_verts: num_v,
             positions: Vec::with_capacity(num_v),
-            indices: Vec::with_capacity(num_v),            
+            indices: Vec::with_capacity(num_v),
             colors: Vec::with_capacity(num_v),
         }
     }
@@ -44,7 +44,7 @@ impl MapGenerator {
 
         self.define_indences();
 
-        self.paint_my_mesh(colormode);     
+        self.paint_my_mesh(colormode);
     }
     /// Generate a mesh with a checkerboard pattern
     /// consumes self
@@ -84,28 +84,31 @@ impl MapGenerator {
 
         for y in 0..self.verts_tuple.1 {
             for x in 0..self.verts_tuple.0 {
-
-                print_loading_indicator((y * self.verts_tuple.0 + x + 1) as f32, self.num_verts as f32);
+                print_loading_indicator(
+                    (y * self.verts_tuple.0 + x + 1) as f32,
+                    self.num_verts as f32,
+                );
 
                 let nx = x as f64 / self.verts_tuple.0 as f64;
                 let ny = y as f64 / self.verts_tuple.1 as f64;
-                
-                let noise_value = noise.get([nx * MAP_PERLIN_NOISE_FACTOR, ny * MAP_PERLIN_NOISE_FACTOR]); // returns a value between -1 and 1
+
+                let noise_value =
+                    noise.get([nx * MAP_PERLIN_NOISE_FACTOR, ny * MAP_PERLIN_NOISE_FACTOR]); // returns a value between -1 and 1
                 let normalized_value = (noise_value + 1.0) / 2.0; // set value between 0 and 1
                 let height = normalized_value * (MAP_MAX_HEIGHT - MAP_MIN_HEIGHT) + MAP_MIN_HEIGHT;
 
-                match height_max{
+                match height_max {
                     None => height_max = Some(height),
-                    Some(max) => if height > max {height_max = Some(height)}
+                    Some(max) => {
+                        if height > max {
+                            height_max = Some(height)
+                        }
+                    }
                 }
 
                 let pos_x = (x as f32 - self.square_tuple.0 as f32 / 2.0) * MAP_VERTEX_DISTANCE;
                 let pos_y = (y as f32 - self.square_tuple.1 as f32 / 2.0) * MAP_VERTEX_DISTANCE;
-                self.positions.push(vec3(
-                    pos_x,
-                    pos_y,
-                    height as f32,
-                ));
+                self.positions.push(vec3(pos_x, pos_y, height as f32));
             }
         }
         dbg!(height_max);
@@ -118,7 +121,6 @@ impl MapGenerator {
             for x in 0..self.verts_tuple.0 {
                 let i = y * self.verts_tuple.0 + x;
                 if x < self.verts_tuple.0 - 1 && y < self.verts_tuple.1 - 1 {
-
                     // lower triangle of square
                     self.indices.push((i + 1) as u32); // bottom right
                     self.indices.push(i as u32); // bottom left
@@ -131,7 +133,7 @@ impl MapGenerator {
                 }
             }
         }
-    }    
+    }
 
     /// paint the mesh with colors
     fn paint_my_mesh(&mut self, colormode: ColorMode) {
