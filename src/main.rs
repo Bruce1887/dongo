@@ -3,10 +3,10 @@ use dongo::*;
 //use std::{sync::Arc, vec};
 
 use map_generator::*;
+use dongo_object::*;
 use three_d::*;
 
-pub fn main() {
-    
+pub fn main() {    
     // Create a window (a canvas on web)
     let window = Window::new(WindowSettings {
         title: "Dongo!".to_string(),
@@ -21,8 +21,6 @@ pub fn main() {
     let context = window.gl();
     context.set_cull(Cull::FrontAndBack);
 
-    dbg!(&context);
-
     let mut camera = Camera::new_perspective(
         window.viewport(),
         CAM_START_POS,
@@ -34,10 +32,12 @@ pub fn main() {
     );
 
 
-    let mut objects: Vec<Box<dyn Object>> = Vec::new();
-    
+    let mut objects = DongoObjectManager::new();
+
     let map_generator = MapGenerator::read_from_file(common::MAPFILE_PATH).unwrap();
     let map_obj = map_generator.generate(&context);    
+
+    objects.add_object(0, Box::new(map_obj), DongoObjectType::Map);
 
     let sphere = CpuMesh::sphere(8);
     let mut pick_mesh = Gm::new(
@@ -50,9 +50,6 @@ pub fn main() {
             },
         ),
     );
-
-    // let mut square_trimesh =CpuMesh::square();
-    // square_trimesh.transform(&Mat4::from_scale(300.0))
     
     let mut cube_trimesh = CpuMesh::cube();
     cube_trimesh.colors = Some(Vec::from([DONGOCOLOR_RED; 36]));
@@ -62,8 +59,8 @@ pub fn main() {
         .expect("Failed to transform cube");
 
     let cube_obj = Gm::new(Mesh::new(&context, &cube_trimesh), PhysicalMaterial::default());
-    
-    objects.push(Box::new(cube_obj));
+
+    objects.add_object(1, Box::new(cube_obj), DongoObjectType::MapEntity);
 
     let mut directional_light =
         renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(1.0, 0.0, -1.0));    
@@ -78,28 +75,22 @@ pub fn main() {
     {
         // Ensure the viewport matches the current window viewport which changes if the window is resized
         camera.set_viewport(frame_input.viewport);
-
+ 
         // Check for events
-        ev_handler.handle_events(&frame_input.events, &mut camera, &context, &objects, &map_obj,&mut pick_mesh);
-        let mut obj_vec = objects.iter().map(|obj| &**obj).collect::<Vec<&dyn Object>>();
+        ev_handler.handle_events(&frame_input.events, &mut camera, &context, &mut objects,&mut pick_mesh);
 
-        
-        directional_light.generate_shadow_map(256, &obj_vec);
+        let mut obj_vec = objects.get_vec();
+
         obj_vec.push(&pick_mesh);
+        directional_light.generate_shadow_map(1024, &obj_vec);
 
 
         // Get the screen render target to be able to render something on the screen
         frame_input.screen()
             // Clear the color and depth of the screen render target
             .clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 1.0, 1.0))
-           
-           /*
-           .render(
-                &camera, map_obj.into_iter().chain(obj_vec).chain(&pick_mesh), &[&directional_light,&ambient_light]
-            );
-             */
             .render(
-                &camera, map_obj.into_iter().chain(obj_vec), &[&directional_light,&ambient_light]
+                &camera, obj_vec, &[&directional_light,&ambient_light]
             );
         // Returns default frame output to end the frame
         FrameOutput::default()

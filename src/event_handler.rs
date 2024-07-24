@@ -1,4 +1,4 @@
-use crate::common::*;
+use crate::{common::*, dongo_object::DongoObjectManager};
 use three_d::*;
 
 #[derive(Default)]
@@ -8,6 +8,7 @@ pub struct EventHandler {
     shift_down: bool,
     ctrl_down: bool,
     alt_down: bool,
+    dragging: bool,
     // cmd_down: bool, // command is the ctrl key on windows and linux
 }
 
@@ -18,9 +19,8 @@ impl EventHandler {
         }
     }
 
-    pub fn handle_events(&mut self, events: &Vec<Event>, camera: &mut Camera, context: &Context, objects: &Vec<Box<dyn Object>>, map_object: &Gm<Mesh,PhysicalMaterial>, pick_mesh: &mut Gm<Mesh,PhysicalMaterial>) {
+    pub fn handle_events(&mut self, events: &Vec<Event>, camera: &mut Camera, context: &Context, objects: &mut DongoObjectManager, pick_mesh: &mut Gm<Mesh,PhysicalMaterial>) {
         for ev in events {
-            //dbg!(ev);
             match ev {
                 Event::ModifiersChange { modifiers } => {
                     // update modifier fields in struct
@@ -51,7 +51,13 @@ impl EventHandler {
                     if *kind == Key::Num0{ // reset camera position and stuff. for debug
                         camera.set_view(CAM_START_POS, CAM_START_TARGET, CAM_START_UP);
                     }
+                    if *kind == Key::Q  {
+                        crate::camera_controller::rotate_camera(camera);
+                    }
 
+                    if *kind == Key::X { // for debug
+                        dbg!(camera.view_direction());
+                    }
                 }
                 Event::KeyRelease {
                     kind,
@@ -61,7 +67,7 @@ impl EventHandler {
                     self.check_keys_down(ev);
 
                     if *kind == Key::Q  {
-                        crate::camera_controller::rotate_camera(camera);
+                        //crate::camera_controller::rotate_camera(camera);
                     }
                 }
                 Event::MouseWheel {
@@ -71,19 +77,22 @@ impl EventHandler {
                     handled: _,
                 } => crate::camera_controller::zoom_camera(camera, delta),
                 Event::MousePress { button , position, modifiers: _, handled: _ } => {
-
-                    if *button == MouseButton::Left {
-                        // objects
-                        if let Some(pick) = pick(context, &camera, *position, objects.iter().map(|obj| &**obj).collect::<Vec<&dyn Object>>()) {                            
+                    if *button == MouseButton::Left {                        
+                        if let Some(pick) = pick(context, &camera, *position, objects.get_vec()) {                            
                             pick_mesh.set_transformation(Mat4::from_translation(pick));
                         }
-                        // map
-                        else if let Some(pick) = pick(context,&camera,*position, map_object) {
-                            pick_mesh.set_transformation(Mat4::from_translation(pick));
-                        }
-
+                        self.dragging = true;
                     }
+                    
 
+                }
+                Event::MouseRelease { button, position, modifiers: _, handled: _ } => {
+                    if *button == MouseButton::Left {
+                        if let Some(pick) = pick(context, &camera, *position, objects.get_vec()) {                            
+                            pick_mesh.set_transformation(Mat4::from_translation(pick));
+                        }                        
+                        self.dragging = false;
+                    }
                 }
                 _ => (),
             }
