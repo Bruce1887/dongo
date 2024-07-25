@@ -2,19 +2,18 @@ use crate::common::*;
 use three_d::*;
 
 pub(crate) fn move_camera(camera: &mut Camera, direction: Vec3, speed: f32) {
-    // Get the forward vector without modifying it
-    let forward = camera.view_direction();
+    // Get the forward and right vector. throw away the Z component and normalize
+    let mut forward = camera.view_direction();
+    forward.z = 0.0;
+    forward = forward.normalize();
+    let mut right = camera.right_direction();
+    right.z = 0.0;
+    right = right.normalize();
 
-    // Get the right vector without modifying it
-    let right = camera.right_direction();
-
-    // Calculate the offset based on forward and right vectors
-    let offset = (forward * direction.y * speed) + (right * direction.x * speed);
-
-    // Apply the offset to the camera position, but keep Z intact
+    // Calculate the new position based on the direction and speed
     let mut new_pos = camera.position().clone();
-    new_pos.x += offset.x;
-    new_pos.y += offset.y;
+    new_pos += right * direction.x * speed;
+    new_pos += forward * direction.y * speed;
 
     // Update target based on new position and current target distance
     let target_distance = camera.target() - camera.position();
@@ -23,7 +22,6 @@ pub(crate) fn move_camera(camera: &mut Camera, direction: Vec3, speed: f32) {
     // Keep the up vector unchanged
     let up_clone = camera.up().clone();
 
-    // Set the new camera view
     camera.set_view(new_pos, new_target, up_clone);
 }
 
@@ -38,29 +36,36 @@ pub(crate) fn zoom_camera(camera: &mut Camera, delta: &(f32, f32)) {
     camera.set_view(pos_clone, target_clone, up_clone);
 }
 
-pub(crate) fn rotate_camera(camera: &mut Camera) {        
+pub(crate) fn rotate_camera(camera: &mut Camera, rotation_direction: f32) {
+    assert!(rotation_direction == -1.0 || rotation_direction == 1.0);
     let pos = camera.position().clone();
     let target = camera.target().clone();
-            
+
     // rate of rotation-change
-    let theta = 0.1_f32;
+    let rotation = CAMERA_ROTATE_SPEED * rotation_direction;
     let rotation_matrix = Mat3::new(
-        theta.cos(), -theta.sin(), 0.0,
-        theta.sin(), theta.cos(), 0.0,
-        0.0, 0.0, 1.0
-    );        
+        rotation.cos(),
+        -rotation.sin(),
+        0.0,
+        rotation.sin(),
+        rotation.cos(),
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+    );
 
     // Calculate the direction-vector from the camera to the target
-    let direction = pos - target;
+    let cam_to_target = pos - target;
 
     // Rotate the direction vector
-    let rotated_direction = rotation_matrix * direction;
-    
+    let rotated_cam_to_target = rotation_matrix * cam_to_target;
+
     // Update the camera's position to maintain the distance to the target
-    let new_pos = camera.target() + rotated_direction;    
+    let new_pos = camera.target() + rotated_cam_to_target;
 
     // also rotate the up-direction
     let new_up = rotation_matrix * camera.up().clone();
 
-    camera.set_view(new_pos, target, new_up);    
+    camera.set_view(new_pos, target, new_up);
 }

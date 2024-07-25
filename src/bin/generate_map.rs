@@ -7,4 +7,5 @@ fn main() {
 
     println!("Writing to file...");
     mapgen.write_to_file();
+    println!("Struct fields written to file");
 }

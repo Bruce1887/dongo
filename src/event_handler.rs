@@ -1,15 +1,25 @@
-use crate::{common::*, dongo_object::DongoObjectManager};
+use crate::{common::*, dongo_object::*, mouse_selection::resize_selection};
 use three_d::*;
 
 #[derive(Default)]
 pub struct EventHandler {
     wasd_down: (bool, bool, bool, bool), // camera movement
-    qe_down: (bool, bool), // camera rotation 
+    qe_down: (bool, bool),               // camera rotation
     shift_down: bool,
     ctrl_down: bool,
     alt_down: bool,
-    dragging: bool,
+    dragging_state: DraggingState,
     // cmd_down: bool, // command is the ctrl key on windows and linux
+}
+
+enum DraggingState {
+    Dragging(Vec3),
+    NotDragging,
+}
+impl Default for DraggingState {
+    fn default() -> Self {
+        DraggingState::NotDragging
+    }
 }
 
 impl EventHandler {
@@ -19,7 +29,13 @@ impl EventHandler {
         }
     }
 
-    pub fn handle_events(&mut self, events: &Vec<Event>, camera: &mut Camera, context: &Context, objects: &mut DongoObjectManager, pick_mesh: &mut Gm<Mesh,PhysicalMaterial>) {
+    pub fn handle_events(
+        &mut self,
+        events: &Vec<Event>,
+        camera: &mut Camera,
+        context: &Context,
+        objects: &mut DongoObjectManager,
+    ) {
         for ev in events {
             match ev {
                 Event::ModifiersChange { modifiers } => {
@@ -40,35 +56,30 @@ impl EventHandler {
                         std::process::exit(0);
                     }
 
-                    if *kind == Key::ArrowUp{
-                        crate::camera_controller::zoom_camera(camera, &(28.0,28.0))
-                    }
-                    
-                    if *kind == Key::ArrowDown{
-                        crate::camera_controller::zoom_camera(camera, &(-28.0,-28.0))
+                    if *kind == Key::ArrowUp {
+                        crate::camera_controller::zoom_camera(camera, &(28.0, 28.0))
                     }
 
-                    if *kind == Key::Num0{ // reset camera position and stuff. for debug
+                    if *kind == Key::ArrowDown {
+                        crate::camera_controller::zoom_camera(camera, &(-28.0, -28.0))
+                    }
+
+                    if *kind == Key::Num0 {
+                        // reset camera position and stuff. for debug
                         camera.set_view(CAM_START_POS, CAM_START_TARGET, CAM_START_UP);
                     }
-                    if *kind == Key::Q  {
-                        crate::camera_controller::rotate_camera(camera);
-                    }
 
-                    if *kind == Key::X { // for debug
+                    if *kind == Key::X {
+                        // for debug
                         dbg!(camera.view_direction());
                     }
                 }
                 Event::KeyRelease {
-                    kind,
+                    kind: _,
                     modifiers: _,
                     handled: _,
                 } => {
                     self.check_keys_down(ev);
-
-                    if *kind == Key::Q  {
-                        //crate::camera_controller::rotate_camera(camera);
-                    }
                 }
                 Event::MouseWheel {
                     delta,
@@ -76,28 +87,62 @@ impl EventHandler {
                     modifiers: _,
                     handled: _,
                 } => crate::camera_controller::zoom_camera(camera, delta),
-                Event::MousePress { button , position, modifiers: _, handled: _ } => {
-                    if *button == MouseButton::Left {                        
-                        if let Some(pick) = pick(context, &camera, *position, objects.get_vec()) {                            
-                            pick_mesh.set_transformation(Mat4::from_translation(pick));
-                        }
-                        self.dragging = true;
-                    }
-                    
-
-                }
-                Event::MouseRelease { button, position, modifiers: _, handled: _ } => {
+                Event::MousePress {
+                    button,
+                    position,
+                    modifiers: _,
+                    handled: _,
+                } => {
                     if *button == MouseButton::Left {
-                        if let Some(pick) = pick(context, &camera, *position, objects.get_vec()) {                            
-                            pick_mesh.set_transformation(Mat4::from_translation(pick));
-                        }                        
-                        self.dragging = false;
+                        if let Some(start_pick) = pick(
+                            context,
+                            &camera,
+                            *position,
+                            objects
+                                .get_vec(|o: &DongoObject| o.get_type() == &DongoObjectType::Map),
+                        ) {
+                            //pick_mesh.set_transformation(Mat4::from_translation(pick));
+                            self.dragging_state = DraggingState::Dragging(start_pick);
+                        }
+                    }
+                }
+                Event::MouseRelease {
+                    button,
+                    position:_,
+                    modifiers: _,
+                    handled: _,
+                } => {
+                    if *button == MouseButton::Left {
+                        if let DraggingState::Dragging(_) = self.dragging_state {
+                            drop(objects.take_obj(SELECTION_IDX));
+                            //resize_selection(objects, start, *position, context)
+                            self.dragging_state = DraggingState::NotDragging;
+                        }
+                    }
+                }
+                Event::MouseMotion {
+                    button: _,
+                    delta: _,
+                    position,
+                    modifiers: _,
+                    handled: _,
+                } => {
+                    if let DraggingState::Dragging(start) = self.dragging_state {
+                        if let Some(end_pick) = pick(
+                            context,
+                            &camera,
+                            *position,
+                            objects
+                                .get_vec(|o: &DongoObject| o.get_type() == &DongoObjectType::Map),
+                        ) {
+                            resize_selection(objects, start, end_pick, context)
+                        }
                     }
                 }
                 _ => (),
             }
-        }        
-        
+        }
+
         // check if any of the wasd keys are down, if so move the camera
         if self.wasd_down.0 || self.wasd_down.1 || self.wasd_down.2 || self.wasd_down.3 {
             // I think it is good practice if these are set in order
@@ -123,17 +168,36 @@ impl EventHandler {
             crate::camera_controller::move_camera(camera, direction, speed);
         }
         if self.qe_down.0 || self.qe_down.1 {
-            //self.rotate_camera(camera);
+            let mut rotation_direction = 0.0;
+            if self.qe_down.0 {
+                rotation_direction += 1.0;
+            }
+            if self.qe_down.1 {
+                rotation_direction -= 1.0;
+            }
+            if rotation_direction != 0.0 {
+                crate::camera_controller::rotate_camera(camera, rotation_direction);
+            }
         }
-    }    
+    }
 
     fn check_keys_down(&mut self, ev: &Event) {
         let value: bool;
         let key: Key;
-        if let Event::KeyPress { kind, modifiers: _, handled: _ } = ev {
+        if let Event::KeyPress {
+            kind,
+            modifiers: _,
+            handled: _,
+        } = ev
+        {
             key = *kind;
             value = true;
-        } else if let Event::KeyRelease { kind, modifiers: _, handled: _ } = ev {
+        } else if let Event::KeyRelease {
+            kind,
+            modifiers: _,
+            handled: _,
+        } = ev
+        {
             key = *kind;
             value = false;
         } else {

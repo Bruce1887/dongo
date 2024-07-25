@@ -13,7 +13,7 @@ pub fn main() {
 
     // Get the graphics context from the window
     let context = window.gl();
-    
+
     context.set_cull(Cull::FrontAndBack);
 
     dbg!(&context);
@@ -30,9 +30,11 @@ pub fn main() {
 
     let mut cube_trimesh = CpuMesh::cube();
     cube_trimesh.colors = Some(Vec::from([Srgba::RED; 36]));
-    let cube_obj = Gm::new(Mesh::new(&context, &cube_trimesh), PhysicalMaterial::default());
+    let cube_obj = Gm::new(
+        Mesh::new(&context, &cube_trimesh),
+        PhysicalMaterial::default(),
+    );
 
-    
     // Create a CPU-side mesh consisting of a single colored triangle
     let positions = vec![
         vec3(5.0, -5.0, 5.0),  // bottom right
@@ -42,9 +44,9 @@ pub fn main() {
     dbg!(vec3(0.5, -0.5, 0.0).cross(vec3(-0.5, -0.5, 0.0)));
 
     let colors = vec![
-        Srgba::BLUE,   // bottom right
+        Srgba::BLUE, // bottom right
         Srgba::BLUE, // bottom left
-        Srgba::BLUE,  // top
+        Srgba::BLUE, // top
     ];
     let mut triangle_mesh = CpuMesh {
         positions: Positions::F32(positions),
@@ -52,12 +54,15 @@ pub fn main() {
         ..Default::default()
     };
     triangle_mesh.compute_normals();
-    
+
     // Construct a model, with a default color material, thereby transferring the mesh data to the GPU
-    let blue_triangle = Gm::new(Mesh::new(&context, &triangle_mesh), PhysicalMaterial::default());
+    let blue_triangle = Gm::new(
+        Mesh::new(&context, &triangle_mesh),
+        PhysicalMaterial::default(),
+    );
 
     let mut directional_light =
-    renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(1.0, 0.0, -1.0));    
+        renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(1.0, 0.0, -1.0));
     let ambient_light = renderer::light::AmbientLight::new(&context, 0.05, Srgba::WHITE);
     // Start the main render loop
     window.render_loop(
