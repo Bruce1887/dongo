@@ -1,0 +1,8 @@
+newmtl initialShadingGroup
+Ns 96.078431 # Controls the shininess of the material.
+Ka 1.00 1.00 1.00
+Kd 1.00 1.00 1.00
+Ks 0.000000 0.000000 0.000000 # Color of reflections.
+d 1.000000 # Opacity of the material (1.0 means fully
+illum 2
+map_Kd tree_2.png

@@ -1,6 +1,6 @@
 # This file uses meters as units for non-parametric coordinates.
 
-mtllib low-poly-pinetree.mtl
+mtllib tree_2.mtl
 g default
 v 480.417908 13.900848 -191.634964
 v 456.571655 13.900848 -197.077698
@@ -409,8 +409,7 @@ vn 0.912569 0.273630 -0.303883
 vn 0.912569 0.273630 -0.303883
 s 1
 g Tree_2_tree_trunk
-# usemtl initialShadingGroup
-usemtl BrownMaterial
+usemtl initialShadingGroup
 f 1/8/1 2/9/2 9/17/3 8/16/4
 s 2
 f 2/9/5 3/10/6 10/18/7 9/17/8
@@ -425,13 +424,13 @@ f 6/13/21 7/14/22 14/22/23 13/21/24
 s 7
 f 7/14/25 1/15/26 8/23/27 14/22/28
 s 8
-# f 2/2/29 1/1/30 15/31/31 // these are the bottom of the tree-stem. no point in showing these
-# f 3/3/32 2/2/29 15/31/31 // these are the bottom of the tree-stem. no point in showing these
-# f 4/4/33 3/3/32 15/31/31 // these are the bottom of the tree-stem. no point in showing these
-# f 5/5/34 4/4/33 15/31/31 // these are the bottom of the tree-stem. no point in showing these
-# f 6/6/35 5/5/34 15/31/31 // these are the bottom of the tree-stem. no point in showing these
-# f 7/7/36 6/6/35 15/31/31 // these are the bottom of the tree-stem. no point in showing these
-# f 1/1/30 7/7/36 15/31/31 // these are the bottom of the tree-stem. no point in showing these
+f 2/2/29 1/1/30 15/31/31
+f 3/3/32 2/2/29 15/31/31
+f 4/4/33 3/3/32 15/31/31
+f 5/5/34 4/4/33 15/31/31
+f 6/6/35 5/5/34 15/31/31
+f 7/7/36 6/6/35 15/31/31
+f 1/1/30 7/7/36 15/31/31
 s 1
 f 8/29/4 9/28/3 17/33/37 16/32/38
 s 2
@@ -447,7 +446,6 @@ f 13/24/24 14/30/23 22/38/47 21/37/48
 s 7
 f 14/30/28 8/29/27 16/32/49 22/38/50
 s off
-usemtl GreenMaterial
 f 23/39/51 30/40/52 29/41/53 28/42/54 27/43/55 26/44/56 25/45/57 24/46/58
 f 23/47/59 24/48/60 31/49/61
 f 24/48/62 25/50/63 31/49/64

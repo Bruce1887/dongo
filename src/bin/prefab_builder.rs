@@ -1,18 +1,17 @@
 const DATA_NAME: &str = "low-poly-pinetree";
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let data_to_massage_path = format!("assets/{}/{}.obj", DATA_NAME,DATA_NAME);
     let massaged_data_path = format!("assets/{}/massaged_{}.obj", DATA_NAME,DATA_NAME);
-
+    
     dongo::data_massage_parlor::data_massage::center_obj_vertices(data_to_massage_path.as_str(), massaged_data_path.as_str()).unwrap();
     dongo::data_massage_parlor::data_massage::resize_obj_vertices(data_to_massage_path.as_str(), massaged_data_path.as_str()).unwrap();
-    run().await;
+    run();
 }
 
 use three_d::*;
 
-pub async fn run() {
+pub fn run() {
     let window = Window::new(WindowSettings {
         title: "prefab_builder!".to_string(),
         max_size: Some((1280, 720)),
@@ -36,20 +35,14 @@ pub async fn run() {
     let directional = DirectionalLight::new(&context, 2.0, Srgba::WHITE, &vec3(-1.0, -1.0, -1.0));
 
     let obj_path = format!("assets/{}/massaged_{}.obj", DATA_NAME,DATA_NAME);
-    let texture_path = format!("assets/{}/{}.png", DATA_NAME,DATA_NAME);
+    let mut loaded = three_d_asset::io::load(&[obj_path.as_str()]).unwrap();
 
-    let mut loaded = three_d_asset::io::load_async(&[obj_path.as_str(),texture_path.as_str()])
-    .await
-        .unwrap();
-
-    let model = loaded.deserialize(obj_path.as_str()).unwrap();
-    // let texture: Texture2D = loaded.deserialize("test.png").unwrap();
-    // dbg!(texture);
+    let model = loaded.deserialize(format!("{}.obj",DATA_NAME)).unwrap();
 
     let mut material_model = three_d::Model::<PhysicalMaterial>::new(&context, &model).unwrap();
     material_model
         .iter_mut()
-        .for_each(|m| m.material.render_states.cull = Cull::Back);
+        .for_each(|m| m.material.render_states.cull = Cull::None);
 
     // main loop
     window.render_loop(move |mut frame_input| {

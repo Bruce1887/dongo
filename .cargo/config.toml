@@ -1,3 +1,4 @@
 [alias]
 mapgen = "run --bin generate_map"
 cull = "run --bin test_cull"
+prefab = "run --bin prefab_builder"
