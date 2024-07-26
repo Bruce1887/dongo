@@ -1,7 +1,7 @@
 use crate::dongo_object::*;
 use three_d::*;
 
-const SELECTION_COLOR: Srgba = Srgba::new(255, 255, 0, 150);
+const SELECTION_COLOR: Srgba = Srgba::new(255, 255, 0, 150); // a yellow color thats kinda transparent
 const SELECTION_HEIGHT_EXTRA: f32 = 10.0;
 
 pub fn resize_selection(
@@ -34,6 +34,13 @@ pub fn resize_selection(
 }
 
 fn create_selection_trimesh(mut start: Vec3, mut end: Vec3) -> CpuMesh {
+    
+    // if start.z > end.z { // this looks weird// this looks weird if if selection intersects the terrain
+    //     start.z += SELECTION_HEIGHT_EXTRA;    
+    // }
+    // else {
+    //     end.z += SELECTION_HEIGHT_EXTRA;
+    // }
     start.z = crate::common::MAP_MIN_HEIGHT as f32;
     end.z = crate::common::MAP_MAX_HEIGHT as f32 + SELECTION_HEIGHT_EXTRA;
     let vertices: [Vec3; 8] = [
@@ -54,7 +61,7 @@ fn create_selection_trimesh(mut start: Vec3, mut end: Vec3) -> CpuMesh {
         7, 5, 4, 7, 6, 5, // Left face
         6, 1, 5, 6, 0, 1, // Top face
         2, 5, 1, 2, 4, 5,
-        // Bottom face
+        // Bottom face // dont bother with bottom, since it is not visible
         // 1, 5, 6,
         // 6, 2, 1,
     ];

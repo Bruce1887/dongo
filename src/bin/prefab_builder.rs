@@ -1,66 +1,85 @@
-use common::*;
-use dongo::*;
-use dongo_object::*;
+const DATA_NAME: &str = "low-poly-pinetree";
+
+#[tokio::main]
+async fn main() {
+    let data_to_massage_path = format!("assets/{}/{}.obj", DATA_NAME,DATA_NAME);
+    let massaged_data_path = format!("assets/{}/massaged_{}.obj", DATA_NAME,DATA_NAME);
+
+    dongo::data_massage_parlor::data_massage::center_obj_vertices(data_to_massage_path.as_str(), massaged_data_path.as_str()).unwrap();
+    dongo::data_massage_parlor::data_massage::resize_obj_vertices(data_to_massage_path.as_str(), massaged_data_path.as_str()).unwrap();
+    run().await;
+}
+
 use three_d::*;
 
-
-pub fn main() {
-    // Create a window (a canvas on web)
+pub async fn run() {
     let window = Window::new(WindowSettings {
-        title: "Dongo!".to_string(),
-        min_size: (10, 10),
+        title: "prefab_builder!".to_string(),
         max_size: Some((1280, 720)),
-        borderless: false,
-        surface_settings: Default::default(),
+        ..Default::default()
     })
     .unwrap();
-
-    // Get the graphics context from the window
     let context = window.gl();
 
     let mut camera = Camera::new_perspective(
         window.viewport(),
-        CAM_START_POS,
-        CAM_START_TARGET,
-        CAM_START_UP,
-        CAM_START_FOV,
-        CAM_START_Z_NEAR,
-        CAM_START_Z_FAR,
+        vec3(4.0, 4.0, 20.0),
+        vec3(0.0, 0.0, 0.0),
+        vec3(0.0, 1.0, 0.0),
+        degrees(45.0),
+        0.1,
+        1000.0,
     );
+    let mut control = OrbitControl::new(*camera.target(), 1.0, 10000.0);
 
-    let mut objects = DongoObjectManager::new();
+    let ambient = AmbientLight::new(&context, 0.4, Srgba::WHITE);
+    let directional = DirectionalLight::new(&context, 2.0, Srgba::WHITE, &vec3(-1.0, -1.0, -1.0));
 
-    let model: three_d_asset::Model =
-    three_d_asset::io::load_and_deserialize("assets/low-poly-tree/source/tree_2.obj").expect("Failed loading asset");
-    
-    //objects.add_object(0, Box::new(tree_gm), DongoObjectType::Map);
+    let obj_path = format!("assets/{}/massaged_{}.obj", DATA_NAME,DATA_NAME);
+    let texture_path = format!("assets/{}/{}.png", DATA_NAME,DATA_NAME);
 
-    let mut directional_light =
-        renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(1.0, 0.0, -1.0));
+    let mut loaded = three_d_asset::io::load_async(&[obj_path.as_str(),texture_path.as_str()])
+    .await
+        .unwrap();
 
-    let ambient_light = renderer::light::AmbientLight::new(&context, 0.05, Srgba::WHITE);
+    let model = loaded.deserialize(obj_path.as_str()).unwrap();
+    // let texture: Texture2D = loaded.deserialize("test.png").unwrap();
+    // dbg!(texture);
 
-    let mut ev_handler = event_handler::EventHandler::new();
+    let mut material_model = three_d::Model::<PhysicalMaterial>::new(&context, &model).unwrap();
+    material_model
+        .iter_mut()
+        .for_each(|m| m.material.render_states.cull = Cull::Back);
 
-    window.render_loop(
-        move |frame_input|
-    {
-        camera.set_viewport(frame_input.viewport);
- 
-        ev_handler.handle_events(&frame_input.events, &mut camera, &context, &mut objects);
+    // main loop
+    window.render_loop(move |mut frame_input| {
+        let mut change = frame_input.first_frame;
+        change |= camera.set_viewport(frame_input.viewport);
+        change |= control.handle_events(&mut camera, &mut frame_input.events);
 
-        let obj_vec = objects.get_vec(|o: &DongoObject| o.get_type() != &DongoObjectType::Selection);
+        for event in &frame_input.events {
+            if let &Event::KeyPress { kind , modifiers, handled: _ } = &event {
+                if *kind == Key::W && modifiers.ctrl {
+                    std::process::exit(0);
+                }
+            }
+        }
 
-        directional_light.generate_shadow_map(512, &obj_vec);
+        // draw
+        if change {
+            frame_input
+                .screen()
+                .clear(ClearState::color_and_depth(1.0, 1.0, 1.0, 1.0, 1.0))
+                .render(
+                    &camera,
+                    &material_model,
+                    &[&ambient, &directional],
+                );
+        }
 
-        let obj_vec = objects.get_vec(no_predicate);
-
-        frame_input.screen()
-            .clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 1.0, 1.0))
-            .render(
-                &camera, obj_vec, &[&directional_light,&ambient_light]
-            );
-        FrameOutput::default()
-    },
-    );
+        FrameOutput {
+            swap_buffers: change,
+            ..Default::default()
+        }
+    });
 }
