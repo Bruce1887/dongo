@@ -1,38 +1,15 @@
-# Blender3D MTL File: 
-# Material Count: 1
-newmtl initialShadingGroup # Begins the definition of a new material. The name of the material is referenced in .obj file
-Ns 96.078431 # Controls the shininess of the material.
-Ka 0.500000 0.500000 0.500000 # Color under ambient lighting.
-Kd 1.000000 1.000000 1.000000 # Color under direct lighting.
-Ks 0.000000 0.000000 0.000000 # Color of reflections.
-Ni 1.000000 # Refraction index, affecting light bending (1.0 means no bending).
-d 1.000000 # Opacity of the material (1.0 means fully opaque).
-illum 2 # Determines the shading model
-map_Kd low-poly-pinetree.png # Specifies an image file for the texture of the material.
-
-# materials.mtl
-newmtl YellowMaterial
-Ns 10.0
-Ka 0.2 0.2 0.0
-Kd 1.0 1.0 0.0
-Ks 0.5 0.5 0.5
-d 1.0
-illum 2
-
-# Green Material
 newmtl GreenMaterial
-Ns 10.0
-Ka 0.0 0.2 0.0
-Kd 0.0 0.6 0.0
+Ns 0.0
+Ka 0.0 0.4 0.0
+Kd 0.0 0.8 0.0
 Ks 0.5 0.5 0.5
 d 1.0
 illum 2
 
-# Brown Material
 newmtl BrownMaterial
-Ns 10.0
-Ka 0.2 0.1 0.0
-Kd 0.4 0.2 0.0
-Ks 0.3 0.2 0.2
+Ns 0.0
+Ka 0.2 0.2 0.0
+Kd 0.4 0.4 0.0
+Ks 0.3 0.3 0.3
 d 1.0
 illum 2

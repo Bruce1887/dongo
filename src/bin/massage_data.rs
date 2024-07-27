@@ -1,0 +1,106 @@
+use dongo::data_massage_parlor::data_massage::*;
+const DATA_NAME: &str = "low-poly-pinetree";
+
+fn main() {
+    let data_to_massage_path = format!("assets/{}/{}.obj", DATA_NAME, DATA_NAME);
+    let massaged_data_path = format!("assets/{}/massaged_{}.obj", DATA_NAME, DATA_NAME);
+
+    center_obj_vertices(
+        data_to_massage_path.as_str(),
+        massaged_data_path.as_str(),
+    )
+    .unwrap();
+    resize_obj_vertices(
+        massaged_data_path.as_str(),
+        massaged_data_path.as_str(),
+    )
+    .unwrap();
+    rotate_obj_vertices(
+        massaged_data_path.as_str(),
+        massaged_data_path.as_str(),
+        Axis::X,
+        90.0
+    )
+    .unwrap();
+    run();
+}
+
+use three_d::*;
+
+pub fn run() {
+    let window = Window::new(WindowSettings {
+        title: "prefab_builder!".to_string(),
+        max_size: Some((1280, 720)),
+        ..Default::default()
+    })
+    .unwrap();
+    let context = window.gl();
+
+    let mut camera = Camera::new_perspective(
+        window.viewport(),
+        vec3(4.0, 4.0, 20.0),
+        vec3(0.0, 0.0, 0.0),
+        vec3(0.0, 1.0, 0.0),
+        degrees(45.0),
+        0.1,
+        1000.0,
+    );
+    let mut control = OrbitControl::new(*camera.target(), 1.0, 10000.0);
+
+    let ambient = AmbientLight::new(&context, 0.4, Srgba::WHITE);
+    let directional = DirectionalLight::new(&context, 2.0, Srgba::WHITE, &vec3(-1.0, -1.0, -1.0));
+    let directional_2 = DirectionalLight::new(&context, 0.1, Srgba::WHITE, &vec3(1.0, 1.0, 1.0));
+    let obj_path = format!("assets/{}/massaged_{}.obj", DATA_NAME, DATA_NAME);
+    let mut loaded = three_d_asset::io::load(&[obj_path.as_str()]).unwrap();
+
+    let model = loaded.deserialize(format!("{}.obj", DATA_NAME)).unwrap();
+
+    let model_mat = three_d::Model::<PhysicalMaterial>::new(&context, &model).unwrap();
+
+    let mut model_mat_2 = three_d::Model::<PhysicalMaterial>::new(&context, &model).unwrap();
+    model_mat_2.iter_mut().for_each(|m| {
+        m.material.render_states.cull = Cull::Front;
+        m.set_transformation(Mat4::from_translation(vec3(0.0, 0.0, 10.0)));
+    });
+
+
+    
+    // dbg!(model.geometries);
+    // dbg!(model.materials);
+
+    // main loop
+    window.render_loop(move |mut frame_input| {
+        let mut change = frame_input.first_frame;
+        change |= camera.set_viewport(frame_input.viewport);
+        change |= control.handle_events(&mut camera, &mut frame_input.events);
+
+        for event in &frame_input.events {
+            if let &Event::KeyPress {
+                kind,
+                modifiers,
+                handled: _,
+            } = &event
+            {
+                if *kind == Key::W && modifiers.ctrl {
+                    std::process::exit(0);
+                }
+            }
+        }
+
+        let mut _empty_vec: Vec<&mut dyn three_d::Object> = vec![];
+        let models_iter = model_mat.iter().chain(model_mat_2.iter());
+        // draw
+        if change {
+            frame_input
+                .screen()
+                .clear(ClearState::color_and_depth(1.0, 1.0, 1.0, 1.0, 1.0))
+                .render(&camera, models_iter, &[&ambient, &directional, &directional_2]);
+        }
+
+        FrameOutput {
+            swap_buffers: change,
+            ..Default::default()
+        }
+    });
+}
+

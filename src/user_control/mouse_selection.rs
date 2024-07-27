@@ -10,7 +10,7 @@ pub fn resize_selection(
     end: Vec3,
     context: &Context,
 ) {
-    objects.take_obj(SELECTION_IDX);
+    objects.take_obj(SELECTION_ID);
 
     let cube_trimesh = create_selection_trimesh(start, end);
 
@@ -26,8 +26,8 @@ pub fn resize_selection(
         ),
     );
 
-    objects.add_object(
-        SELECTION_IDX,
+    objects.add_object_with_idx(
+        SELECTION_ID,
         Box::new(selection_mesh),
         DongoObjectType::Selection,
     )

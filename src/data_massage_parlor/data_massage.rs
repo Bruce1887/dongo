@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::{self, BufRead, BufReader, Write};
 
 pub fn center_obj_vertices(input_path: &str, output_path: &str) -> io::Result<()> {
-    assert_ne!(input_path, output_path);
+    // assert_ne!(input_path, output_path);
 
     let input_file = File::open(input_path)?;
     let reader = BufReader::new(input_file);
@@ -112,6 +112,70 @@ pub fn resize_obj_vertices(input_path: &str, output_path: &str) -> io::Result<()
     for line in lines {
         if line.starts_with("v ") {
             let (x, y, z) = scaled_vertices[vertex_index];
+            writeln!(output_file, "v {} {} {}", x, y, z)?;
+            vertex_index += 1;
+        } else {
+            writeln!(output_file, "{}", line)?;
+        }
+    }
+
+    Ok(())
+}
+
+pub enum Axis {
+    X,
+    Y,
+    Z,
+}
+
+pub fn rotate_obj_vertices(input_path: &str, output_path: &str, axis: Axis, angle: f32) -> io::Result<()> {
+    // assert_ne!(input_path, output_path);
+
+    let input_file = File::open(input_path)?;
+    let reader = BufReader::new(input_file);
+
+    let mut vertices = Vec::new();
+    let mut lines = Vec::new();
+
+    // Read and parse the .obj file
+    for line in reader.lines() {
+        let line = line?;
+        if line.starts_with("v ") {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() == 4 {
+                let x: f32 = parts[1].parse().unwrap();
+                let y: f32 = parts[2].parse().unwrap();
+                let z: f32 = parts[3].parse().unwrap();
+                vertices.push((x, y, z));
+            }
+        }
+        lines.push(line);
+    }
+
+    // Calculate the rotation matrix based on the axis and angle
+    let angle_rad = angle * std::f32::consts::PI / 180.0;
+    let cos_theta = angle_rad.cos();
+    let sin_theta = angle_rad.sin();
+    let rotation_matrix: [[f32; 3]; 3] = match axis {
+        Axis::X => [[1.0, 0.0, 0.0], [0.0, cos_theta, -sin_theta], [0.0, sin_theta, cos_theta]],
+        Axis::Y => [[cos_theta, 0.0, sin_theta], [0.0, 1.0, 0.0], [-sin_theta, 0.0, cos_theta]],
+        Axis::Z => [[cos_theta, -sin_theta, 0.0], [sin_theta, cos_theta, 0.0], [0.0, 0.0, 1.0]],
+    };
+
+    // Apply the rotation matrix to each vertex
+    let rotated_vertices: Vec<(f32, f32, f32)> = vertices.iter().map(|&(x, y, z)| {
+        let rotated_x = rotation_matrix[0][0] * x + rotation_matrix[0][1] * y + rotation_matrix[0][2] * z;
+        let rotated_y = rotation_matrix[1][0] * x + rotation_matrix[1][1] * y + rotation_matrix[1][2] * z;
+        let rotated_z = rotation_matrix[2][0] * x + rotation_matrix[2][1] * y + rotation_matrix[2][2] * z;
+        (rotated_x, rotated_y, rotated_z)
+    }).collect();
+
+    // Write the rotated vertices and other lines back to a new .obj file
+    let mut output_file = File::create(output_path)?;
+    let mut vertex_index = 0;
+    for line in lines {
+        if line.starts_with("v ") {
+            let (x, y, z) = rotated_vertices[vertex_index];
             writeln!(output_file, "v {} {} {}", x, y, z)?;
             vertex_index += 1;
         } else {

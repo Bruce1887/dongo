@@ -70,8 +70,15 @@ impl EventHandler {
                     }
 
                     if *kind == Key::X {
-                        // for debug
-                        dbg!(camera.view_direction());
+                        for m in objects.get_models() {
+                            let m = m as &dyn DongoObjectTraits;
+                            dbg!(m, m.get_aabb_center());
+                            
+                        }
+                        for m in objects.get_objects() {
+                            let m = m as &dyn DongoObjectTraits;
+                            dbg!(m,m.get_aabb_center());
+                        }
                     }
                 }
                 Event::KeyRelease {
@@ -99,7 +106,7 @@ impl EventHandler {
                             &camera,
                             *position,
                             objects
-                                .get_vec(|o: &DongoObject| o.get_type() == &DongoObjectType::Map),
+                                .get_objects_vec(|o: &DongoObject| o.get_type() == &DongoObjectType::Map),
                         ) {
                             //pick_mesh.set_transformation(Mat4::from_translation(pick));
                             self.dragging_state = DraggingState::Dragging(start_pick);
@@ -114,7 +121,7 @@ impl EventHandler {
                 } => {
                     if *button == MouseButton::Left {
                         if let DraggingState::Dragging(_) = self.dragging_state {
-                            drop(objects.take_obj(SELECTION_IDX));
+                            drop(objects.take_obj(SELECTION_ID));
                             //resize_selection(objects, start, *position, context)
                             self.dragging_state = DraggingState::NotDragging;
                         }
@@ -133,7 +140,7 @@ impl EventHandler {
                             &camera,
                             *position,
                             objects
-                                .get_vec(|o: &DongoObject| o.get_type() == &DongoObjectType::Map),
+                                .get_objects_vec(|o: &DongoObject| o.get_type() == &DongoObjectType::Map),
                         ) {
                             resize_selection(objects, start, end_pick, context)
                         }

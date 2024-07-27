@@ -1,7 +1,7 @@
 # This file uses meters as units for non-parametric coordinates.
 
 mtllib low-poly-pinetree.mtl
-g default
+# g default
 v 480.417908 13.900848 -191.634964
 v 456.571655 13.900848 -197.077698
 v 437.448547 13.900848 -181.827484
@@ -408,7 +408,7 @@ vn 0.912569 0.273630 -0.303883
 vn 0.912569 0.273630 -0.303883
 vn 0.912569 0.273630 -0.303883
 s 1
-g Tree_2_tree_trunk
+# g Tree_2_tree_trunk
 # usemtl initialShadingGroup
 usemtl BrownMaterial
 f 1/8/1 2/9/2 9/17/3 8/16/4
