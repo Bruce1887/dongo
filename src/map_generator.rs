@@ -5,6 +5,7 @@ use noise::{NoiseFn, Perlin};
 use rand::Rng;
 use three_d::*;
 
+use ::core::f32;
 use std::{fs::File, io::prelude::*};
 
 #[allow(dead_code)]
@@ -40,6 +41,7 @@ impl MapGenerator {
     }
 
     pub fn define_parameters(&mut self, colormode: ColorMode) {
+        dbg!(self.square_tuple, self.verts_tuple);
         self.define_positions();
 
         self.define_indences();
@@ -80,7 +82,8 @@ impl MapGenerator {
         let seed: u32 = rng.gen();
         let noise = Perlin::new(seed);
 
-        let mut height_max: Option<f64> = None;
+        let mut lowest_elevation = f64::MAX;
+        let mut highest_elevation = f64::MIN;
 
         for y in 0..self.verts_tuple.1 {
             for x in 0..self.verts_tuple.0 {
@@ -97,21 +100,20 @@ impl MapGenerator {
                 let normalized_value = (noise_value + 1.0) / 2.0; // set value between 0 and 1
                 let height = normalized_value * (MAP_MAX_HEIGHT - MAP_MIN_HEIGHT) + MAP_MIN_HEIGHT;
 
-                match height_max {
-                    None => height_max = Some(height),
-                    Some(max) => {
-                        if height > max {
-                            height_max = Some(height)
-                        }
-                    }
+                if height < lowest_elevation {
+                    lowest_elevation = height;
                 }
-
-                let pos_x = ((x - self.square_tuple.0) as f32  / 2.0) * MAP_VERTEX_DISTANCE;
-                let pos_y = ((y - self.square_tuple.1) as f32 / 2.0) * MAP_VERTEX_DISTANCE;
+                if height > highest_elevation{
+                    highest_elevation = height;
+                }
+                
+                let pos_x = (x as f32 - self.square_tuple.0 as f32 / 2.0) * MAP_VERTEX_DISTANCE;
+                let pos_y = (y as f32 - self.square_tuple.1 as f32 / 2.0) * MAP_VERTEX_DISTANCE;
+             
                 self.positions.push(vec3(pos_x, pos_y, height as f32));
             }
         }
-        dbg!(height_max);
+        dbg!(highest_elevation,lowest_elevation);
     }
 
     /// generate indices of the vertices

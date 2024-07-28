@@ -1,4 +1,5 @@
-use crate::{common::*, dongo_object::*, mouse_selection::resize_selection};
+use crate::*;
+use crate::common::*;
 use three_d::*;
 
 #[derive(Default)]
@@ -70,15 +71,15 @@ impl EventHandler {
                     }
 
                     if *kind == Key::X {
-                        for m in objects.get_models() {
-                            let m = m as &dyn DongoObjectTraits;
-                            dbg!(m, m.get_aabb_center());
-                            
-                        }
                         for m in objects.get_objects() {
                             let m = m as &dyn DongoObjectTraits;
-                            dbg!(m,m.get_aabb_center());
+                            m.get_aabb_center();
                         }
+                        objects.models.iter_mut().for_each(|m| {
+                            m.foo();
+                            // let m = m as &dyn DongoObjectTraits;
+                            // m.get_aabb_center();
+                        });                        
                     }
                 }
                 Event::KeyRelease {
@@ -172,7 +173,7 @@ impl EventHandler {
                 CAMERA_MOVE_SPEED
             };
 
-            crate::camera_controller::move_camera(camera, direction, speed);
+            move_camera(camera, direction, speed);
         }
         if self.qe_down.0 || self.qe_down.1 {
             let mut rotation_direction = 0.0;

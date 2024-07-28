@@ -19,7 +19,7 @@ pub const CAMERA_ROTATE_SPEED: f32 = 0.08;
 
 // camera initial values
 pub const CAM_START_POS: Vec3 = vec3(0.0, 0.0, (CAMERA_MAX_HEIGHT + CAMERA_MIN_HEIGHT) / 2.0);
-pub const CAM_START_TARGET: Vec3 = vec3(0.0, 300.0, 0.0);
+pub const CAM_START_TARGET: Vec3 = vec3(0.0, 200.0, 0.0);
 pub const CAM_START_UP: Vec3 = vec3(0.0, 1.0, 0.0); // maybe always the same up?
 pub const CAM_START_FOV: Degrees = degrees(45.0);
 pub const CAM_START_Z_NEAR: f32 = CAMERA_MIN_HEIGHT; // TODO: set this to some better value

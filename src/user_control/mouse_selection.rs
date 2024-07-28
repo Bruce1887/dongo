@@ -1,5 +1,7 @@
-use crate::dongo_object::*;
 use three_d::*;
+
+use crate::dongo_manager::DongoObjectManager;
+use crate::dongo_entity::*;
 
 const SELECTION_COLOR: Srgba = Srgba::new(255, 255, 0, 150); // a yellow color thats kinda transparent
 const SELECTION_HEIGHT_EXTRA: f32 = 10.0;

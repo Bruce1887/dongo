@@ -2,19 +2,27 @@ use dongo::data_massage_parlor::data_massage::*;
 const DATA_NAME: &str = "low-poly-pinetree";
 
 fn main() {
+    println!("Massaging data...");
+    
     let data_to_massage_path = format!("assets/{}/{}.obj", DATA_NAME, DATA_NAME);
     let massaged_data_path = format!("assets/{}/massaged_{}.obj", DATA_NAME, DATA_NAME);
-
+    println!("DATA_NAME {DATA_NAME}\n");
+    
+    println!("Centering vertices...");
     center_obj_vertices(
         data_to_massage_path.as_str(),
         massaged_data_path.as_str(),
     )
     .unwrap();
+
+    println!("Resizing vertices...");
     resize_obj_vertices(
         massaged_data_path.as_str(),
         massaged_data_path.as_str(),
     )
     .unwrap();
+
+    println!("Rotating vertices...");
     rotate_obj_vertices(
         massaged_data_path.as_str(),
         massaged_data_path.as_str(),
@@ -22,6 +30,9 @@ fn main() {
         90.0
     )
     .unwrap();
+
+    println!("\nData massaged: {massaged_data_path}");
+
     run();
 }
 
@@ -62,11 +73,6 @@ pub fn run() {
         m.material.render_states.cull = Cull::Front;
         m.set_transformation(Mat4::from_translation(vec3(0.0, 0.0, 10.0)));
     });
-
-
-    
-    // dbg!(model.geometries);
-    // dbg!(model.materials);
 
     // main loop
     window.render_loop(move |mut frame_input| {

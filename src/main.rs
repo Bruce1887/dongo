@@ -1,6 +1,5 @@
 use common::*;
 use dongo::*;
-use dongo_object::*;
 use map_generator::*;
 use three_d::*;
 
@@ -34,8 +33,8 @@ pub fn main() {
     let map_generator = MapGenerator::read_from_file(common::MAPFILE_PATH).unwrap();
     let map_obj = map_generator.generate(&context);
 
-
     objects.add_object_with_idx(MAP_ID,Box::new(map_obj), DongoObjectType::Map);
+    
 
     let mut cube_trimesh = CpuMesh::cube();
     cube_trimesh.colors = Some(Vec::from([DONGOCOLOR_RED; 36]));
@@ -54,16 +53,19 @@ pub fn main() {
     );
     objects.add_object(Box::new(cube_obj), DongoObjectType::MapEntity);
 
+    // tree
     let obj_path = "assets/low-poly-pinetree/massaged_low-poly-pinetree.obj";
     let mut loaded = three_d_asset::io::load(&[obj_path]).unwrap();
     let model = loaded.deserialize("low-poly-pinetree.obj").unwrap();
     let mut model_mat = three_d::Model::<PhysicalMaterial>::new(&context, &model).unwrap();
     model_mat.iter_mut().for_each(|m| {
         m.material.render_states.cull = Cull::Back;
-        m.set_transformation(Mat4::from_scale(10.0) * Mat4::from_translation(vec3(5.0, 0.0, 20.0)));
+        // m.set_transformation(Mat4::from_translation(vec3(0.0, 0.0, 210.0)));
+        m.set_transformation(Mat4::from_scale(5.0));
         });
         
     objects.add_model(model_mat, DongoObjectType::MapEntity);
+
 
 
     let mut directional_light =
@@ -85,7 +87,7 @@ pub fn main() {
 
         let obj_vec = objects.get_objects_vec(|o: &DongoObject| o.get_type() != &DongoObjectType::Selection);
 
-        directional_light.generate_shadow_map(512, &obj_vec);
+        directional_light.generate_shadow_map(2048, &obj_vec);
 
         // Get the screen render target to be able to render something on the screen
         frame_input.screen()
