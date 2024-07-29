@@ -1,13 +1,13 @@
 use three_d::*;
 
-use crate::dongo_manager::DongoObjectManager;
 use crate::dongo_entity::*;
+use crate::dongo_entity_manager::DongoEntityManager;
 
 const SELECTION_COLOR: Srgba = Srgba::new(255, 255, 0, 150); // a yellow color thats kinda transparent
 const SELECTION_HEIGHT_EXTRA: f32 = 10.0;
 
 pub fn resize_selection(
-    objects: &mut DongoObjectManager,
+    objects: &mut DongoEntityManager,
     start: Vec3,
     end: Vec3,
     context: &Context,
@@ -31,14 +31,13 @@ pub fn resize_selection(
     objects.add_object_with_idx(
         SELECTION_ID,
         Box::new(selection_mesh),
-        DongoObjectType::Selection,
+        DongoEntityType::Selection,
     )
 }
 
 fn create_selection_trimesh(mut start: Vec3, mut end: Vec3) -> CpuMesh {
-    
     // if start.z > end.z { // this looks weird// this looks weird if if selection intersects the terrain
-    //     start.z += SELECTION_HEIGHT_EXTRA;    
+    //     start.z += SELECTION_HEIGHT_EXTRA;
     // }
     // else {
     //     end.z += SELECTION_HEIGHT_EXTRA;
@@ -62,7 +61,8 @@ fn create_selection_trimesh(mut start: Vec3, mut end: Vec3) -> CpuMesh {
         3, 4, 2, 3, 7, 4, // Back face
         7, 5, 4, 7, 6, 5, // Left face
         6, 1, 5, 6, 0, 1, // Top face
-        2, 5, 1, 2, 4, 5,
+        2, 5, 1, 2, 4,
+        5,
         // Bottom face // dont bother with bottom, since it is not visible
         // 1, 5, 6,
         // 6, 2, 1,

@@ -1,5 +1,5 @@
-use crate::*;
 use crate::common::*;
+use crate::*;
 use three_d::*;
 
 #[derive(Default)]
@@ -35,7 +35,7 @@ impl EventHandler {
         events: &Vec<Event>,
         camera: &mut Camera,
         context: &Context,
-        objects: &mut DongoObjectManager,
+        objects: &mut DongoEntityManager,
     ) {
         for ev in events {
             match ev {
@@ -71,17 +71,12 @@ impl EventHandler {
                     }
 
                     if *kind == Key::X {
-                        for m in objects.get_objects() {
-                            if m.get_id() == 0 {                      
-                                dbg!(m.get_pos());
-                                m.set_pos(vec3(20.0, 0.0, 201.0));
+                        for obj in objects.get_objects() {
+                            if obj.get_id() == 0 {
+                                dbg!(obj.mm_provider.mesh().transformation());
+                                obj.add_to_pos(vec3(0.0, 0.0, 10.0))
                             }
                         }
-                        // objects.models.iter_mut().for_each(|m| {
-                        //     m.foo();
-                        //     // let m = m as &dyn DongoObjectTraits;
-                        //     // m.get_aabb_center();
-                        // });                        
                     }
                 }
                 Event::KeyRelease {
@@ -108,8 +103,9 @@ impl EventHandler {
                             context,
                             &camera,
                             *position,
-                            objects
-                                .get_objects_vec(|o: &DongoObject| o.get_type() == &DongoObjectType::Map),
+                            objects.get_objects_vec(|o: &DongoObject| {
+                                o.get_type() == &DongoEntityType::Map
+                            }),
                         ) {
                             //pick_mesh.set_transformation(Mat4::from_translation(pick));
                             self.dragging_state = DraggingState::Dragging(start_pick);
@@ -118,7 +114,7 @@ impl EventHandler {
                 }
                 Event::MouseRelease {
                     button,
-                    position:_,
+                    position: _,
                     modifiers: _,
                     handled: _,
                 } => {
@@ -142,8 +138,9 @@ impl EventHandler {
                             context,
                             &camera,
                             *position,
-                            objects
-                                .get_objects_vec(|o: &DongoObject| o.get_type() == &DongoObjectType::Map),
+                            objects.get_objects_vec(|o: &DongoObject| {
+                                o.get_type() == &DongoEntityType::Map
+                            }),
                         ) {
                             resize_selection(objects, start, end_pick, context)
                         }

@@ -35,7 +35,11 @@ pub fn center_obj_vertices(input_path: &str, output_path: &str) -> io::Result<()
         sum_y += y;
         sum_z += z;
     }
-    let centroid = (sum_x / num_vertices, sum_y / num_vertices, sum_z / num_vertices);
+    let centroid = (
+        sum_x / num_vertices,
+        sum_y / num_vertices,
+        sum_z / num_vertices,
+    );
 
     // Translate vertices to center around the origin
     let centered_vertices: Vec<(f32, f32, f32)> = vertices
@@ -58,7 +62,6 @@ pub fn center_obj_vertices(input_path: &str, output_path: &str) -> io::Result<()
 
     Ok(())
 }
-
 
 pub fn resize_obj_vertices(input_path: &str, output_path: &str) -> io::Result<()> {
     let input_file = File::open(input_path)?;
@@ -86,12 +89,24 @@ pub fn resize_obj_vertices(input_path: &str, output_path: &str) -> io::Result<()
     let (mut min_x, mut min_y, mut min_z) = (f32::MAX, f32::MAX, f32::MAX);
     let (mut max_x, mut max_y, mut max_z) = (f32::MIN, f32::MIN, f32::MIN);
     for (x, y, z) in &vertices {
-        if *x < min_x { min_x = *x; }
-        if *y < min_y { min_y = *y; }
-        if *z < min_z { min_z = *z; }
-        if *x > max_x { max_x = *x; }
-        if *y > max_y { max_y = *y; }
-        if *z > max_z { max_z = *z; }
+        if *x < min_x {
+            min_x = *x;
+        }
+        if *y < min_y {
+            min_y = *y;
+        }
+        if *z < min_z {
+            min_z = *z;
+        }
+        if *x > max_x {
+            max_x = *x;
+        }
+        if *y > max_y {
+            max_y = *y;
+        }
+        if *z > max_z {
+            max_z = *z;
+        }
     }
 
     // Calculate the scaling factor
@@ -103,7 +118,13 @@ pub fn resize_obj_vertices(input_path: &str, output_path: &str) -> io::Result<()
     // Scale vertices to fit within (-1, -1, -1) to (1, 1, 1)
     let scaled_vertices: Vec<(f32, f32, f32)> = vertices
         .iter()
-        .map(|(x, y, z)| ((x - min_x) * scale - 1.0, (y - min_y) * scale - 1.0, (z - min_z) * scale - 1.0))
+        .map(|(x, y, z)| {
+            (
+                (x - min_x) * scale - 1.0,
+                (y - min_y) * scale - 1.0,
+                (z - min_z) * scale - 1.0,
+            )
+        })
         .collect();
 
     // Write the scaled vertices and other lines back to a new .obj file
@@ -128,7 +149,12 @@ pub enum Axis {
     Z,
 }
 
-pub fn rotate_obj_vertices(input_path: &str, output_path: &str, axis: Axis, angle: f32) -> io::Result<()> {
+pub fn rotate_obj_vertices(
+    input_path: &str,
+    output_path: &str,
+    axis: Axis,
+    angle: f32,
+) -> io::Result<()> {
     // assert_ne!(input_path, output_path);
 
     let input_file = File::open(input_path)?;
@@ -157,18 +183,36 @@ pub fn rotate_obj_vertices(input_path: &str, output_path: &str, axis: Axis, angl
     let cos_theta = angle_rad.cos();
     let sin_theta = angle_rad.sin();
     let rotation_matrix: [[f32; 3]; 3] = match axis {
-        Axis::X => [[1.0, 0.0, 0.0], [0.0, cos_theta, -sin_theta], [0.0, sin_theta, cos_theta]],
-        Axis::Y => [[cos_theta, 0.0, sin_theta], [0.0, 1.0, 0.0], [-sin_theta, 0.0, cos_theta]],
-        Axis::Z => [[cos_theta, -sin_theta, 0.0], [sin_theta, cos_theta, 0.0], [0.0, 0.0, 1.0]],
+        Axis::X => [
+            [1.0, 0.0, 0.0],
+            [0.0, cos_theta, -sin_theta],
+            [0.0, sin_theta, cos_theta],
+        ],
+        Axis::Y => [
+            [cos_theta, 0.0, sin_theta],
+            [0.0, 1.0, 0.0],
+            [-sin_theta, 0.0, cos_theta],
+        ],
+        Axis::Z => [
+            [cos_theta, -sin_theta, 0.0],
+            [sin_theta, cos_theta, 0.0],
+            [0.0, 0.0, 1.0],
+        ],
     };
 
     // Apply the rotation matrix to each vertex
-    let rotated_vertices: Vec<(f32, f32, f32)> = vertices.iter().map(|&(x, y, z)| {
-        let rotated_x = rotation_matrix[0][0] * x + rotation_matrix[0][1] * y + rotation_matrix[0][2] * z;
-        let rotated_y = rotation_matrix[1][0] * x + rotation_matrix[1][1] * y + rotation_matrix[1][2] * z;
-        let rotated_z = rotation_matrix[2][0] * x + rotation_matrix[2][1] * y + rotation_matrix[2][2] * z;
-        (rotated_x, rotated_y, rotated_z)
-    }).collect();
+    let rotated_vertices: Vec<(f32, f32, f32)> = vertices
+        .iter()
+        .map(|&(x, y, z)| {
+            let rotated_x =
+                rotation_matrix[0][0] * x + rotation_matrix[0][1] * y + rotation_matrix[0][2] * z;
+            let rotated_y =
+                rotation_matrix[1][0] * x + rotation_matrix[1][1] * y + rotation_matrix[1][2] * z;
+            let rotated_z =
+                rotation_matrix[2][0] * x + rotation_matrix[2][1] * y + rotation_matrix[2][2] * z;
+            (rotated_x, rotated_y, rotated_z)
+        })
+        .collect();
 
     // Write the rotated vertices and other lines back to a new .obj file
     let mut output_file = File::create(output_path)?;
