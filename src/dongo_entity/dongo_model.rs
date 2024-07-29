@@ -1,52 +1,50 @@
-use three_d::*;
 use crate::*;
+use three_d::*;
 
 pub struct DongoModel {
     pub(crate) id: u16,
     pub(crate) model: Model<PhysicalMaterial>,
-    pub(crate) o_type: DongoObjectType,
+    pub(crate) o_type: DongoEntityType,
 }
 impl DongoModel {
     pub fn foo(&mut self) {
-        self.model.iter_mut().for_each(|m| {
+        self.model.iter_mut().for_each(|part| {
             // dbg!(m.geometry.transformation());
             // dbg!(m.transformation());
-            let transform = m.transformation().clone();
-            m.set_transformation(transform*Mat4::from_translation(vec3(0.0, 0.0, 10.0)));
-        }
-        );
+            let transform = part.transformation().clone();
+            part.set_transformation(transform * Mat4::from_translation(vec3(0.0, 0.0, 10.0)));
+        });
     }
 }
-impl DongoObjectTraits for DongoModel{
+impl DongoEntity for DongoModel {
     fn get_id(&self) -> u16 {
         self.id
     }
 
-    fn get_type(&self) -> &DongoObjectType {
+    fn get_type(&self) -> &DongoEntityType {
         &self.o_type
     }
 
-    fn get_aabb_center(&self) -> Vec3 {
-        dbg!(self as &dyn DongoObjectTraits);
-        let min_vec = self.model.iter().fold(Vector3::new(f32::MAX, f32::MAX, f32::MAX), |acc, part| {
-            let min = part.aabb().min();
-            Vector3::new(acc.x.min(min.x), acc.y.min(min.y), acc.z.min(min.z))
-        });
-        dbg!(min_vec);
+    fn get_pos(&self) -> Vec3 {
+        // i suppose it is fine to check the first modelpart only, as long as all modelparts are moved together
+        let transform = self.model.first().unwrap().transformation(); // this will panic if a model contains 0 modelparts
+        let (x,y,z) = (transform.w.x, transform.w.y, transform.w.z);
+        vec3(x, y, z)
+    }
 
-        let max_vec = self.model.iter().fold(Vector3::new(f32::MIN, f32::MIN, f32::MIN), |acc, part| {
-            let max = part.aabb().max();
-            Vector3::new(acc.x.max(max.x), acc.y.max(max.y), acc.z.max(max.z))
+    fn add_to_pos(&mut self, pos: Vec3) {
+        self.model.iter_mut().for_each(|part| {
+            let mut transform = part.transformation().clone();
+            transform.w += vec4(pos.x, pos.y, pos.z, 0.0);
+            part.set_transformation(transform);
         });
-        dbg!(max_vec);
+    }
 
-        let num_mps = self.model.len();
-        let mut center_vec = Vector3::zero();
-        for idx in 0..num_mps {
-            center_vec += self.model[idx].aabb().center();
-        }
-        dbg!(center_vec);
-        
-        center_vec / num_mps as f32
+    fn set_pos(&mut self, pos: Vec3) {
+        self.model.iter_mut().for_each(|part| {
+            let mut transform = part.transformation().clone();
+            transform.w = vec4(pos.x, pos.y, pos.z, transform.w.w);
+            part.set_transformation(transform);
+        });
     }
 }

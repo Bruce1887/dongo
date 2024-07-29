@@ -12,4 +12,3 @@ pub mod dongo_entity;
 pub use dongo_entity::*;
 
 pub mod data_massage_parlor;
-

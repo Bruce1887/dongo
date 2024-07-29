@@ -5,9 +5,22 @@ use noise::{NoiseFn, Perlin};
 use rand::Rng;
 use three_d::*;
 
-use ::core::f32;
 use std::{fs::File, io::prelude::*};
 
+/* // Maybe replace with something like this (if i ever get around to it)
+
+    let height_map = std::sync::Arc::new(move |x, y| 1.0);
+    let terra = Terrain::new(
+        &context,
+        PhysicalMaterial::default(),
+        height_map,
+        64.0,
+        3.0,
+        vec2(0.0, 0.0),
+    );
+
+    objects.add_object(Box::new(terra), DongoObjectType::MapEntity);
+ */
 #[allow(dead_code)]
 pub enum ColorMode {
     HeightMap,
@@ -103,17 +116,17 @@ impl MapGenerator {
                 if height < lowest_elevation {
                     lowest_elevation = height;
                 }
-                if height > highest_elevation{
+                if height > highest_elevation {
                     highest_elevation = height;
                 }
-                
+
                 let pos_x = (x as f32 - self.square_tuple.0 as f32 / 2.0) * MAP_VERTEX_DISTANCE;
                 let pos_y = (y as f32 - self.square_tuple.1 as f32 / 2.0) * MAP_VERTEX_DISTANCE;
-             
+
                 self.positions.push(vec3(pos_x, pos_y, height as f32));
             }
         }
-        dbg!(highest_elevation,lowest_elevation);
+        dbg!(highest_elevation, lowest_elevation);
     }
 
     /// generate indices of the vertices
