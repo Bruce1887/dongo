@@ -87,7 +87,7 @@ pub fn main() {
 
         let obj_vec = objects.get_objects_vec(|o: &DongoObject| o.get_type() != &DongoObjectType::Selection);
 
-        directional_light.generate_shadow_map(2048, &obj_vec);
+        directional_light.generate_shadow_map(1024, &obj_vec);
 
         // Get the screen render target to be able to render something on the screen
         frame_input.screen()

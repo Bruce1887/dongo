@@ -72,14 +72,16 @@ impl EventHandler {
 
                     if *kind == Key::X {
                         for m in objects.get_objects() {
-                            let m = m as &dyn DongoObjectTraits;
-                            m.get_aabb_center();
+                            if m.get_id() == 0 {                      
+                                dbg!(m.get_pos());
+                                m.set_pos(vec3(20.0, 0.0, 201.0));
+                            }
                         }
-                        objects.models.iter_mut().for_each(|m| {
-                            m.foo();
-                            // let m = m as &dyn DongoObjectTraits;
-                            // m.get_aabb_center();
-                        });                        
+                        // objects.models.iter_mut().for_each(|m| {
+                        //     m.foo();
+                        //     // let m = m as &dyn DongoObjectTraits;
+                        //     // m.get_aabb_center();
+                        // });                        
                     }
                 }
                 Event::KeyRelease {

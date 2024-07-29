@@ -60,8 +60,8 @@ impl DongoObjectManager {
         None
     }
 
-    pub fn get_objects(&self) -> &Vec<DongoObject> {
-        &self.objects
+    pub fn get_objects(&mut self) -> &mut Vec<DongoObject> {
+        &mut self.objects
     }
     pub fn get_models(&self) -> &Vec<DongoModel> {
         &self.models

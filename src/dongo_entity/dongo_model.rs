@@ -10,7 +10,7 @@ impl DongoModel {
     pub fn foo(&mut self) {
         self.model.iter_mut().for_each(|m| {
             // dbg!(m.geometry.transformation());
-            dbg!(m.transformation());
+            // dbg!(m.transformation());
             let transform = m.transformation().clone();
             m.set_transformation(transform*Mat4::from_translation(vec3(0.0, 0.0, 10.0)));
         }
