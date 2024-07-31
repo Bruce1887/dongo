@@ -1,32 +1,46 @@
 use std::fmt::Debug;
 use three_d::*;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone,Copy)]
 pub enum DongoEntityType {
-    Map,
-    MapEntity,
-    PlayerEntity,
-    Selection,
-    UI,
+    WorldTerrain, // the terrain. only one of these
+    WorldEntity, // an object on the terrain, non interactive. e.g. a tree
+    PlayerEntity(u8), // an object belonging to player wit id u8
+    SelectionBox, // a box that is used to select objects
+    SelectionMarker(u16), // a marker that is used to show that an object is selected. u16 is the id of the selected object
+    UI, 
 }
 
 pub trait DongoEntity {
-    fn get_id(&self) -> u16;
+    fn id(&self) -> Option<u16>;
 
-    fn get_type(&self) -> &DongoEntityType;
+    fn de_type(&self) -> &DongoEntityType;
 
-    fn get_pos(&self) -> Vec3;
+    fn pos(&self) -> Vec3;
 
     fn set_pos(&mut self, pos: Vec3);
 
     fn add_to_pos(&mut self, pos: Vec3);
-}
 
-impl Debug for dyn DongoEntity {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "id: {}, o_type: {:?} ", self.get_id(), self.get_type())
+    fn is_within_bounds(&self, start: Vec3, end: Vec3) -> bool {
+        let pos = self.pos();
+        start.x.min(end.x) <= pos.x && pos.x <= start.x.max(end.x) &&
+        start.y.min(end.y) <= pos.y && pos.y <= start.y.max(end.y)
+    }
+
+    fn set_desc(&mut self, desc: String){
+        panic!("Default implementation is not good enough!");
+    }
+
+    fn desc(&self) -> &str {
+        panic!("Default implementation is not good enough!")
+    }
+    
+    fn animate(&mut self, time: f32) {
+        panic!("Default implementation is not good enough!")
     }
 }
+
 
 // used in DongoObject. Models provide handles for mesh and a material. Pure objects dont, thats why this trait is needed.
 

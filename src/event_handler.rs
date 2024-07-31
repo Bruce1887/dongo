@@ -35,7 +35,7 @@ impl EventHandler {
         events: &Vec<Event>,
         camera: &mut Camera,
         context: &Context,
-        objects: &mut DongoEntityManager,
+        entities: &mut DongoEntityManager,
     ) {
         for ev in events {
             match ev {
@@ -71,12 +71,7 @@ impl EventHandler {
                     }
 
                     if *kind == Key::X {
-                        for obj in objects.get_objects() {
-                            if obj.get_id() == 0 {
-                                dbg!(obj.mm_provider.mesh().transformation());
-                                obj.add_to_pos(vec3(0.0, 0.0, 10.0))
-                            }
-                        }
+                        println!("{entities}");
                     }
                 }
                 Event::KeyRelease {
@@ -103,8 +98,8 @@ impl EventHandler {
                             context,
                             &camera,
                             *position,
-                            objects.get_objects_vec(|o: &DongoObject| {
-                                o.get_type() == &DongoEntityType::Map
+                            entities.all_as_object(|entity| {
+                                entity.de_type() == &DongoEntityType::WorldTerrain
                             }),
                         ) {
                             //pick_mesh.set_transformation(Mat4::from_translation(pick));
@@ -114,14 +109,23 @@ impl EventHandler {
                 }
                 Event::MouseRelease {
                     button,
-                    position: _,
+                    position,
                     modifiers: _,
                     handled: _,
                 } => {
                     if *button == MouseButton::Left {
-                        if let DraggingState::Dragging(_) = self.dragging_state {
-                            drop(objects.take_obj(SELECTION_ID));
-                            //resize_selection(objects, start, *position, context)
+                        if let DraggingState::Dragging(start) = self.dragging_state {
+                            if let Some(end_pick) = pick(
+                                context,
+                                &camera,
+                                *position,
+                                entities.all_as_object(|entity| {
+                                    entity.de_type() == &DongoEntityType::WorldTerrain
+                                }),
+                            ) {
+                                select(entities, start,end_pick, context);
+                            }
+                            drop(entities.take_obj(SELECTION_ID));    
                             self.dragging_state = DraggingState::NotDragging;
                         }
                     }
@@ -138,11 +142,11 @@ impl EventHandler {
                             context,
                             &camera,
                             *position,
-                            objects.get_objects_vec(|o: &DongoObject| {
-                                o.get_type() == &DongoEntityType::Map
+                            entities.all_as_object(|entity| {
+                                entity.de_type() == &DongoEntityType::WorldTerrain
                             }),
                         ) {
-                            resize_selection(objects, start, end_pick, context)
+                            resize_selection(entities, start, end_pick, context)
                         }
                     }
                 }

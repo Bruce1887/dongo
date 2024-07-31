@@ -2,17 +2,37 @@ use crate::*;
 use three_d::*;
 
 pub struct DongoObject {
-    pub(crate) id: u16,
+    pub(crate) id: Option<u16>,
+    pub(crate) desc : Option<String>,
     pub(crate) mm_provider: Box<dyn MeshMaterialProvider>, // this is what it is all about
-    pub(crate) o_type: DongoEntityType,
+    pub(crate) e_type: DongoEntityType,
+}
+
+impl std::fmt::Display for DongoObject {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.id {
+            Some(id) => write!(f, "{:?}, {:?}, {}", id, self.e_type, self.desc()),
+            None => write!(f, "None, {:?}", self.e_type),
+        }        
+    }
 }
 
 impl DongoObject {
-    pub(crate) fn new(id: u16, mmp: Box<dyn MeshMaterialProvider>, o_type: DongoEntityType) -> DongoObject {
+    pub(crate) fn new(id: u16, mmp: Box<dyn MeshMaterialProvider>, e_type: DongoEntityType) -> DongoObject {
         DongoObject {
-            id,
+            id: Some(id),
+            desc: None,
             mm_provider: mmp,
-            o_type,
+            e_type,
+        }
+    }
+
+    pub fn from_gm<M: Material + 'static>(gm: Gm<Mesh, M>, e_type: DongoEntityType) -> DongoObject{
+        DongoObject{
+            id: None,
+            desc: None,
+            mm_provider: Box::new(gm),
+            e_type,
         }
     }
 
@@ -27,15 +47,15 @@ impl DongoObject {
     }
 }
 impl DongoEntity for DongoObject {
-    fn get_id(&self) -> u16 {
+    fn id(&self) -> Option<u16> {
         self.id
     }
 
-    fn get_type(&self) -> &DongoEntityType {
-        &self.o_type
+    fn de_type(&self) -> &DongoEntityType {
+        &self.e_type
     }
 
-    fn get_pos(&self) -> Vec3 {
+    fn pos(&self) -> Vec3 {
         let transform = self.mm_provider.mesh().transformation();
         let (x,y,z) = (transform.w.x, transform.w.y, transform.w.z);
         vec3(x, y, z)
@@ -52,5 +72,19 @@ impl DongoEntity for DongoObject {
         let mut transform = self.mm_provider.mesh_mut().transformation();
         transform.w += vec4(pos.x, pos.y, pos.z, 0.0);
         self.mm_provider.mesh_mut().set_transformation(transform);
+    }
+
+    fn desc(&self) -> &str {
+        match &self.desc {
+            Some(desc) => desc,
+            None => "No description provided",
+        }
+    }
+    fn set_desc(&mut self, desc: String){
+        self.desc = Some(desc);
+    }
+
+    fn animate(&mut self, time: f32) {
+        self.mm_provider.mesh_mut().animate(time);
     }
 }

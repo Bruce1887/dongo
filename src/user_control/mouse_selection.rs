@@ -2,79 +2,85 @@ use three_d::*;
 
 use crate::dongo_entity::*;
 use crate::dongo_entity_manager::DongoEntityManager;
+use crate::shapes::*;
 
-const SELECTION_COLOR: Srgba = Srgba::new(255, 255, 0, 150); // a yellow color thats kinda transparent
+const SELECTION_BOX_COLOR: Srgba = Srgba::new(255, 255, 0, 150); // a yellow color thats kinda transparent
+const SELECTION_MARKER_COLOR: Srgba = Srgba::new(255, 255, 0, 255); // a yellow color thats not transparent
 const SELECTION_HEIGHT_EXTRA: f32 = 10.0;
 
-pub fn resize_selection(
-    objects: &mut DongoEntityManager,
+// caller is responsible for removing the selection box
+pub fn select(
+    entities: &mut DongoEntityManager,
     start: Vec3,
     end: Vec3,
     context: &Context,
 ) {
-    objects.take_obj(SELECTION_ID);
 
-    let cube_trimesh = create_selection_trimesh(start, end);
+    let inside = entities.get_all_within_bounds(start, end);
+    inside.iter().for_each(|tuple| {
+        match tuple {
+            (Some(id), DongoEntityType::WorldEntity) => {
+                let entity = entities.get_entity_by_id(*id).unwrap();
 
-    CpuMesh::cube();
-    let selection_mesh = Gm::new(
-        Mesh::new(&context, &cube_trimesh),
-        ColorMaterial::new_transparent(
-            &context,
-            &CpuMaterial {
-                albedo: SELECTION_COLOR,
-                ..Default::default()
+                let mut pos = entity.pos();
+                
+                pos.z += 10.0;
+                
+                let mut marker_trimesh = create_marker_trimesh(pos, 3.0, 3.0, SELECTION_MARKER_COLOR);
+                marker_trimesh.compute_normals();
+
+                let mut selectionmarker_gm = Gm::new(
+                    Mesh::new(&context, &marker_trimesh),
+                    PhysicalMaterial::default(),
+                );
+                
+                
+                selectionmarker_gm.set_animation(|time| Mat4::from_angle_z(radians(time * 0.005)));
+                
+                entities.add_object(Box::new(selectionmarker_gm), DongoEntityType::SelectionMarker(*id));
             },
-        ),
-    );
-
-    objects.add_object_with_idx(
-        SELECTION_ID,
-        Box::new(selection_mesh),
-        DongoEntityType::Selection,
-    )
+            _ => (),
+        }
+    });
+    
 }
 
-fn create_selection_trimesh(mut start: Vec3, mut end: Vec3) -> CpuMesh {
-    // if start.z > end.z { // this looks weird// this looks weird if if selection intersects the terrain
-    //     start.z += SELECTION_HEIGHT_EXTRA;
-    // }
-    // else {
-    //     end.z += SELECTION_HEIGHT_EXTRA;
-    // }
-    start.z = crate::common::MAP_MIN_HEIGHT as f32;
-    end.z = crate::common::MAP_MAX_HEIGHT as f32 + SELECTION_HEIGHT_EXTRA;
-    let vertices: [Vec3; 8] = [
-        start,                         //0 front bot-left
-        vec3(start.x, start.y, end.z), //1 front top-left
-        vec3(end.x, start.y, end.z),   //2 front top-right
-        vec3(end.x, start.y, start.z), //3 front bot-right
-        end,                           //4 back top-left
-        vec3(start.x, end.y, end.z),   //5 back top-right
-        vec3(start.x, end.y, start.z), //6 back bot-right
-        vec3(end.x, end.y, start.z),   //7 back bot-left
-    ];
+// removes the selection box, and creates a new one
+pub fn resize_selection(
+    entities: &mut DongoEntityManager,
+    mut start: Vec3,
+    mut end: Vec3,
+    context: &Context,
+) {
+    entities.take_obj(SELECTION_ID);
 
-    let indices: [u32; 30] = [
-        // Front face
-        0, 2, 1, 0, 3, 2, // Right face
-        3, 4, 2, 3, 7, 4, // Back face
-        7, 5, 4, 7, 6, 5, // Left face
-        6, 1, 5, 6, 0, 1, // Top face
-        2, 5, 1, 2, 4,
-        5,
-        // Bottom face // dont bother with bottom, since it is not visible
-        // 1, 5, 6,
-        // 6, 2, 1,
-    ];
-
-    let colors: [Srgba; 36] = [SELECTION_COLOR; 36];
-
-    CpuMesh {
-        positions: Positions::F32(vertices.to_vec()),
-        colors: Some(colors.to_vec()),
-        indices: Indices::U32(indices.to_vec()),
-        //normals: Some(self.normals),
-        ..Default::default()
+    match entities.get_object_by_id(SELECTION_ID) {
+        Some(selection_box) => {
+            let positions = create_box_positions(start, end).to_vec();
+            dbg!(selection_box.mm_provider.mesh_mut().update_positions(&positions))
+        },
+        None => {
+            start.z = crate::common::MAP_MIN_HEIGHT as f32;
+            end.z = crate::common::MAP_MAX_HEIGHT as f32 + SELECTION_HEIGHT_EXTRA;
+            let box_trimesh = create_box_trimesh(start, end,SELECTION_BOX_COLOR);
+            //CpuMesh::cube();
+            let selectionbox_gm = Gm::new(
+                Mesh::new(&context, &box_trimesh),
+                ColorMaterial::new_transparent(
+                    &context,
+                    &CpuMaterial {
+                        albedo: SELECTION_BOX_COLOR,
+                        ..Default::default()
+                    },
+                ),
+            );
+        
+            entities.add_object_with_idx(
+                SELECTION_ID,
+                Box::new(selectionbox_gm),
+                DongoEntityType::SelectionBox,
+            )
+        },
     }
 }
+

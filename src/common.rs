@@ -7,7 +7,7 @@ pub const MAPFILE_PATH: &str = "output/mapfile_1";
 pub const MAP_COLOR_MODE: ColorMode = ColorMode::HeightMap;
 pub const MAP_MAX_HEIGHT: f64 = 200.0;
 pub const MAP_MIN_HEIGHT: f64 = 0.0;
-pub const MAP_VERTEX_DISTANCE: f32 = 2.0;
+pub const MAP_VERTEX_DISTANCE: f32 = 5.0;
 pub const MAP_PERLIN_NOISE_FACTOR: f64 = 3.0; // higher value equals more mountains and valleys
 
 // camera movement
