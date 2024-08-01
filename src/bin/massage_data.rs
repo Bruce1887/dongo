@@ -40,7 +40,7 @@ use three_d::*;
 
 pub fn run() {
     let window = Window::new(WindowSettings {
-        title: "prefab_builder!".to_string(),
+        title: "massage!".to_string(),
         max_size: Some((1280, 720)),
         ..Default::default()
     })

@@ -1,12 +1,12 @@
 use three_d::*;
 
-pub fn create_box_positions(start: Vec3, end: Vec3) -> [Vec3;8] {
+pub fn create_box_positions(start: Vec3, end: Vec3) -> [Vec3; 8] {
     // if start.z > end.z { // this looks weird// this looks weird if if selection intersects the terrain
     // }
     // else {
-        //     end.z += SELECTION_HEIGHT_EXTRA;
-        // }
-        let vertices: [Vec3; 8] = [
+    //     end.z += SELECTION_HEIGHT_EXTRA;
+    // }
+    let vertices: [Vec3; 8] = [
         //     start.z += SELECTION_HEIGHT_EXTRA;
         start,                         //0 front bot-left
         vec3(start.x, start.y, end.z), //1 front top-left
@@ -19,7 +19,7 @@ pub fn create_box_positions(start: Vec3, end: Vec3) -> [Vec3;8] {
     ];
     vertices
 }
-pub fn create_box_trimesh(start: Vec3, end: Vec3, color :Srgba) -> CpuMesh {
+pub fn create_box_trimesh(start: Vec3, end: Vec3, color: Srgba) -> CpuMesh {
     let vertices = create_box_positions(start, end);
     let indices: [u32; 30] = [
         // Front face
@@ -47,27 +47,36 @@ pub fn create_box_trimesh(start: Vec3, end: Vec3, color :Srgba) -> CpuMesh {
 
 // start is either bottom or top point, depending on the sign of height
 // height determines the pointiness of the pyramid
-pub fn create_marker_positions(pointy_end: Vec3, height: f32, top_side: f32) -> [Vec3;5] {
-        let vertices: [Vec3; 5] = [
-        pointy_end, 
-        vec3(pointy_end.x, pointy_end.y - top_side/2.0, pointy_end.z + height), 
-        vec3(pointy_end.x + top_side/2.0, pointy_end.y, pointy_end.z + height),
-        vec3(pointy_end.x, pointy_end.y + top_side/2.0, pointy_end.z + height),
-        vec3(pointy_end.x - top_side/2.0, pointy_end.y, pointy_end.z + height),
+pub fn create_marker_positions(pointy_end: Vec3, height: f32, top_side: f32) -> [Vec3; 5] {
+    let vertices: [Vec3; 5] = [
+        pointy_end,
+        vec3(
+            pointy_end.x,
+            pointy_end.y - top_side / 2.0,
+            pointy_end.z + height,
+        ),
+        vec3(
+            pointy_end.x + top_side / 2.0,
+            pointy_end.y,
+            pointy_end.z + height,
+        ),
+        vec3(
+            pointy_end.x,
+            pointy_end.y + top_side / 2.0,
+            pointy_end.z + height,
+        ),
+        vec3(
+            pointy_end.x - top_side / 2.0,
+            pointy_end.y,
+            pointy_end.z + height,
+        ),
     ];
     vertices
 }
 
-pub fn create_marker_trimesh(start: Vec3, height: f32, width: f32, color :Srgba) -> CpuMesh  {
+pub fn create_marker_trimesh(start: Vec3, height: f32, width: f32, color: Srgba) -> CpuMesh {
     let vertices = create_marker_positions(start, height, width);
-    let indices: [u32; 18] = [
-        0,2,1,
-        0,3,2,
-        0,4,3,
-        0,1,4,
-        1,2,3,
-        1,3,4
-    ];
+    let indices: [u32; 18] = [0, 2, 1, 0, 3, 2, 0, 4, 3, 0, 1, 4, 1, 2, 3, 1, 3, 4];
 
     let colors: [Srgba; 5] = [color; 5];
 
@@ -77,5 +86,5 @@ pub fn create_marker_trimesh(start: Vec3, height: f32, width: f32, color :Srgba)
         indices: Indices::U32(indices.to_vec()),
         //normals: Some(self.normals),
         ..Default::default()
-    }   
+    }
 }

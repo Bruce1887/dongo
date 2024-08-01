@@ -69,7 +69,11 @@ impl EventHandler {
                         // reset camera position and stuff. for debug
                         camera.set_view(CAM_START_POS, CAM_START_TARGET, CAM_START_UP);
                     }
-
+                    
+                    if *kind == Key::Z {
+                        mouse_selection::get_selected(entities);
+                    }
+                    
                     if *kind == Key::X {
                         println!("{entities}");
                     }
@@ -99,7 +103,10 @@ impl EventHandler {
                             &camera,
                             *position,
                             entities.all_as_object(|entity| {
-                                entity.de_type() == &DongoEntityType::WorldTerrain
+                                entity.de_type()
+                                    == &DongoEntityType::NonSelectable {
+                                        entity: NonSelectableEntity::WorldTerrain,
+                                    }
                             }),
                         ) {
                             //pick_mesh.set_transformation(Mat4::from_translation(pick));
@@ -120,12 +127,15 @@ impl EventHandler {
                                 &camera,
                                 *position,
                                 entities.all_as_object(|entity| {
-                                    entity.de_type() == &DongoEntityType::WorldTerrain
+                                    entity.de_type()
+                                        == &DongoEntityType::NonSelectable {
+                                            entity: NonSelectableEntity::WorldTerrain,
+                                        }
                                 }),
                             ) {
-                                select(entities, start,end_pick, context);
+                                select_in_bounds(entities, start, end_pick, context);
                             }
-                            drop(entities.take_obj(SELECTION_ID));    
+                            drop(entities.take_object(SELECTION_ID));
                             self.dragging_state = DraggingState::NotDragging;
                         }
                     }
@@ -143,7 +153,10 @@ impl EventHandler {
                             &camera,
                             *position,
                             entities.all_as_object(|entity| {
-                                entity.de_type() == &DongoEntityType::WorldTerrain
+                                entity.de_type()
+                                    == &DongoEntityType::NonSelectable {
+                                        entity: NonSelectableEntity::WorldTerrain,
+                                    }
                             }),
                         ) {
                             resize_selection(entities, start, end_pick, context)

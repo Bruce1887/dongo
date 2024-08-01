@@ -9,18 +9,18 @@ use std::{fs::File, io::prelude::*};
 
 /* // Maybe replace with something like this (if i ever get around to it)
 
-    let height_map = std::sync::Arc::new(move |x, y| 1.0);
-    let terra = Terrain::new(
-        &context,
-        PhysicalMaterial::default(),
-        height_map,
-        64.0,
-        3.0,
-        vec2(0.0, 0.0),
-    );
+   let height_map = std::sync::Arc::new(move |x, y| 1.0);
+   let terra = Terrain::new(
+       &context,
+       PhysicalMaterial::default(),
+       height_map,
+       64.0,
+       3.0,
+       vec2(0.0, 0.0),
+   );
 
-    objects.add_object(Box::new(terra), DongoObjectType::MapEntity);
- */
+   objects.add_object(Box::new(terra), DongoObjectType::MapEntity);
+*/
 #[allow(dead_code)]
 pub enum ColorMode {
     HeightMap,

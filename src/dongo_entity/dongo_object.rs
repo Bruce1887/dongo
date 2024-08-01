@@ -2,8 +2,8 @@ use crate::*;
 use three_d::*;
 
 pub struct DongoObject {
-    pub(crate) id: Option<u16>,
-    pub(crate) desc : Option<String>,
+    pub(crate) id: Option<ENTITYID>,
+    pub(crate) desc: Option<String>,
     pub(crate) mm_provider: Box<dyn MeshMaterialProvider>, // this is what it is all about
     pub(crate) e_type: DongoEntityType,
 }
@@ -13,12 +13,17 @@ impl std::fmt::Display for DongoObject {
         match self.id {
             Some(id) => write!(f, "{:?}, {:?}, {}", id, self.e_type, self.desc()),
             None => write!(f, "None, {:?}", self.e_type),
-        }        
+        }
     }
+
 }
 
 impl DongoObject {
-    pub(crate) fn new(id: u16, mmp: Box<dyn MeshMaterialProvider>, e_type: DongoEntityType) -> DongoObject {
+    pub(crate) fn new_with_id(
+        id: ENTITYID,
+        mmp: Box<dyn MeshMaterialProvider>,
+        e_type: DongoEntityType,
+    ) -> DongoObject {
         DongoObject {
             id: Some(id),
             desc: None,
@@ -27,8 +32,8 @@ impl DongoObject {
         }
     }
 
-    pub fn from_gm<M: Material + 'static>(gm: Gm<Mesh, M>, e_type: DongoEntityType) -> DongoObject{
-        DongoObject{
+    pub fn from_gm<M: Material + 'static>(gm: Gm<Mesh, M>, e_type: DongoEntityType) -> DongoObject {
+        DongoObject {
             id: None,
             desc: None,
             mm_provider: Box::new(gm),
@@ -47,7 +52,7 @@ impl DongoObject {
     }
 }
 impl DongoEntity for DongoObject {
-    fn id(&self) -> Option<u16> {
+    fn id(&self) -> Option<ENTITYID> {
         self.id
     }
 
@@ -57,7 +62,7 @@ impl DongoEntity for DongoObject {
 
     fn pos(&self) -> Vec3 {
         let transform = self.mm_provider.mesh().transformation();
-        let (x,y,z) = (transform.w.x, transform.w.y, transform.w.z);
+        let (x, y, z) = (transform.w.x, transform.w.y, transform.w.z);
         vec3(x, y, z)
     }
 
@@ -80,7 +85,7 @@ impl DongoEntity for DongoObject {
             None => "No description provided",
         }
     }
-    fn set_desc(&mut self, desc: String){
+    fn set_desc(&mut self, desc: String) {
         self.desc = Some(desc);
     }
 

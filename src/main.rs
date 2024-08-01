@@ -34,19 +34,31 @@ pub fn main() {
     // let map_generator = MapGenerator::read_from_file("output/good_mapfile").unwrap();
     let map_obj = map_generator.generate(&context);
 
-    entities.add_object_with_idx(MAP_ID, Box::new(map_obj), DongoEntityType::WorldTerrain);
+    entities.add_object_with_id(
+        MAP_ID,
+        Box::new(map_obj),
+        DongoEntityType::NonSelectable {
+            entity: NonSelectableEntity::WorldTerrain,
+        },
+    );
 
     let mut cube_trimesh = CpuMesh::cube();
     cube_trimesh.colors = Some(Vec::from([DONGOCOLOR_RED; 36]));
 
-    let cube_obj = Gm::new(
+    let cube_gm = Gm::new(
         Mesh::new(&context, &cube_trimesh),
         PhysicalMaterial::default(),
     );
-    let mut dongo_cube = DongoObject::from_gm(cube_obj, DongoEntityType::WorldEntity);
+    let mut dongo_cube = DongoObject::from_gm(
+        cube_gm,
+        DongoEntityType::Selectable {
+            entity: SelectableEntity::PlayerEntity(0),
+        },
+    );
     dongo_cube.set_pos(vec3(0.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
     entities.add_dongo_object(dongo_cube);
     // objects.add_object(Box::new(cube_obj), DongoEntityType::MapEntity);
+
 
     // tree
     let obj_path = "assets/low-poly-pinetree/massaged_low-poly-pinetree.obj";
@@ -60,8 +72,12 @@ pub fn main() {
         m.set_transformation(Mat4::from_scale(5.0));
     });
 
-
-    entities.add_model(model_mat, DongoEntityType::WorldEntity);
+    entities.add_dongomodel_from_model(
+        model_mat,
+        DongoEntityType::NonSelectable {
+            entity: NonSelectableEntity::WorldEntity,
+        },
+    );
 
     let mut directional_light =
         renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(2.0, 0.0, -1.0));
@@ -76,20 +92,22 @@ pub fn main() {
     {
         // Ensure the viewport matches the current window viewport which changes if the window is resized
         camera.set_viewport(frame_input.viewport);
- 
+
         // Check for events
         ev_handler.handle_events(&frame_input.events, &mut camera, &context, &mut entities);
 
         entities.all_as_entities().iter_mut().for_each(|e| {
             match e.de_type() {
-                DongoEntityType::SelectionMarker(_) => {
+                DongoEntityType::NonSelectable {
+                    entity: NonSelectableEntity::SelectionMarker(_),
+                } => {
                     e.animate(frame_input.accumulated_time as f32);
                 }
                 _ => (),
             }
         });
 
-        let obj_vec = entities.all_as_object(|entity| entity.de_type() != &DongoEntityType::SelectionBox);
+        let obj_vec = entities.all_as_object(|entity| entity.de_type() != &DongoEntityType::NonSelectable { entity: NonSelectableEntity::SelectionBox });
 
         directional_light.generate_shadow_map(1024, &obj_vec);
 
