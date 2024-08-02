@@ -34,7 +34,7 @@ impl DongoEntityManager {
         DongoEntityManager {
             objects: Vec::new(),
             next_vacant_id: 0,
-            models: Vec::new(),         
+            models: Vec::new(),
         }
     }
 
@@ -45,43 +45,55 @@ impl DongoEntityManager {
         mm_provider: Box<dyn MeshMaterialProvider>,
         e_type: DongoEntityType,
     ) {
-        self.objects.push(DongoObject::new_with_id(id, mm_provider, e_type));
+        self.objects
+            .push(DongoObject::new_with_id(id, mm_provider, e_type));
     }
 
     pub fn add_object_from_mmp(
         &mut self,
         mm_provider: Box<dyn MeshMaterialProvider>,
         e_type: DongoEntityType,
-    ) {
-        self.objects
-            .push(DongoObject::new_with_id(self.next_vacant_id, mm_provider, e_type));
+    ) -> ENTITYID{
+        let identifier = self.next_vacant_id;
+        self.objects.push(DongoObject::new_with_id(
+            identifier,
+            mm_provider,
+            e_type,
+        ));
         self.next_vacant_id += 1;
+        identifier
     }
 
-    pub fn add_dongo_object(&mut self, mut dongo_object: DongoObject) {
-        dongo_object.id = Some(self.next_vacant_id);
+    pub fn add_dongo_object(&mut self, mut dongo_object: DongoObject) -> ENTITYID{
+        let identifier = self.next_vacant_id;
+        dongo_object.id = Some(identifier);
         self.objects.push(dongo_object);
         self.next_vacant_id += 1;
+        identifier
     }
 
-    pub fn add_dongo_model(&mut self, mut dmodel: DongoModel) {
-        dmodel.id = Some(self.next_vacant_id);
+    pub fn add_dongo_model(&mut self, mut dmodel: DongoModel) -> ENTITYID{
+        let identifier = self.next_vacant_id;
+        dmodel.id = Some(identifier);
         self.models.push(dmodel);
-        self.next_vacant_id;
+        self.next_vacant_id += 1;
+        identifier
     }
 
     pub fn add_dongomodel_from_model(
         &mut self,
         model: Model<PhysicalMaterial>,
         e_type: DongoEntityType,
-    ) {
+    ) -> ENTITYID {
+        let identifier = self.next_vacant_id;
         self.models.push(DongoModel {
-            id: Some(self.next_vacant_id),
+            id: Some(identifier),
             desc: None,
             model,
             e_type,
         });
         self.next_vacant_id += 1;
+        identifier
     }
 
     // pub fn remove_many_objects(&mut self, closure: impl Fn(&DongoObject) -> bool) {
@@ -199,25 +211,8 @@ impl DongoEntityManager {
         }
         r_value
     }
-
-    pub fn get_selected(&self) -> Vec<ENTITYID> {
-        let mut selected: Vec<ENTITYID> = Vec::new();
-        self.objects.iter().map(|obj| obj as &dyn DongoEntity).chain(
-            self.models.iter().map(|obj| obj as &dyn DongoEntity)
-        ).for_each(|e| {
-            if let DongoEntityType::NonSelectable { entity: NonSelectableEntity::SelectionMarker(id) } = e.de_type() {
-                selected.push(*id);
-            }
-        });
-        selected
-    }
-
-    pub fn drop_selected(&mut self){
-
-    }
 }
 
-// can be passed to get_vec to get all objects
 pub const fn no_predicate(_: &dyn crate::dongo_traits::DongoEntity) -> bool {
     true
 }

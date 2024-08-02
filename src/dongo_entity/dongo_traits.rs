@@ -12,6 +12,10 @@ pub trait DongoEntity {
 
     fn add_to_pos(&mut self, pos: Vec3);
 
+    fn transform(&self) -> Mat4;
+
+    fn set_transform(&mut self, transform: Mat4);
+
     fn is_within_bounds(&self, start: Vec3, end: Vec3) -> bool {
         let pos = self.pos();
         start.x.min(end.x) <= pos.x

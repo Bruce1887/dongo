@@ -15,7 +15,6 @@ impl std::fmt::Display for DongoObject {
             None => write!(f, "None, {:?}", self.e_type),
         }
     }
-
 }
 
 impl DongoObject {
@@ -24,6 +23,10 @@ impl DongoObject {
         mmp: Box<dyn MeshMaterialProvider>,
         e_type: DongoEntityType,
     ) -> DongoObject {
+
+        // set cull to back
+        mmp.material().render_states().cull = Cull::Front;
+
         DongoObject {
             id: Some(id),
             desc: None,
@@ -33,6 +36,9 @@ impl DongoObject {
     }
 
     pub fn from_gm<M: Material + 'static>(gm: Gm<Mesh, M>, e_type: DongoEntityType) -> DongoObject {
+        // set cull to back
+        gm.material.render_states().cull = Cull::Front; // this has no effect
+        dbg!(gm.material.render_states().cull);
         DongoObject {
             id: None,
             desc: None,
@@ -76,6 +82,14 @@ impl DongoEntity for DongoObject {
     fn add_to_pos(&mut self, pos: Vec3) {
         let mut transform = self.mm_provider.mesh_mut().transformation();
         transform.w += vec4(pos.x, pos.y, pos.z, 0.0);
+        self.mm_provider.mesh_mut().set_transformation(transform);
+    }
+
+    fn transform(&self) -> Mat4 {
+        self.mm_provider.mesh().transformation()
+    }
+
+    fn set_transform(&mut self, transform: Mat4) {
         self.mm_provider.mesh_mut().set_transformation(transform);
     }
 

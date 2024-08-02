@@ -91,7 +91,7 @@ pub fn run() {
                     std::process::exit(0);
                 }
             }
-        }
+        } 
 
         let mut _empty_vec: Vec<&mut dyn three_d::Object> = vec![];
         let models_iter = model_mat.iter().chain(model_mat_2.iter());

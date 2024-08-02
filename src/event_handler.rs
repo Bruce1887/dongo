@@ -9,17 +9,18 @@ pub struct EventHandler {
     shift_down: bool,
     ctrl_down: bool,
     alt_down: bool,
-    dragging_state: DraggingState,
     // cmd_down: bool, // command is the ctrl key on windows and linux
+    dragging_state: MouseDraggingState,
+    selector: DongoSelector,
 }
 
-enum DraggingState {
+enum MouseDraggingState {
     Dragging(Vec3),
     NotDragging,
 }
-impl Default for DraggingState {
+impl Default for MouseDraggingState {
     fn default() -> Self {
-        DraggingState::NotDragging
+        MouseDraggingState::NotDragging
     }
 }
 
@@ -69,11 +70,13 @@ impl EventHandler {
                         // reset camera position and stuff. for debug
                         camera.set_view(CAM_START_POS, CAM_START_TARGET, CAM_START_UP);
                     }
-                    
+
                     if *kind == Key::Z {
-                        mouse_selection::get_selected(entities);
+                        let selected = self.selector.get_selected();
+                        dbg!(selected);
+                        self.selector.clear_selection(entities);
                     }
-                    
+
                     if *kind == Key::X {
                         println!("{entities}");
                     }
@@ -110,7 +113,7 @@ impl EventHandler {
                             }),
                         ) {
                             //pick_mesh.set_transformation(Mat4::from_translation(pick));
-                            self.dragging_state = DraggingState::Dragging(start_pick);
+                            self.dragging_state = MouseDraggingState::Dragging(start_pick);
                         }
                     }
                 }
@@ -121,7 +124,7 @@ impl EventHandler {
                     handled: _,
                 } => {
                     if *button == MouseButton::Left {
-                        if let DraggingState::Dragging(start) = self.dragging_state {
+                        if let MouseDraggingState::Dragging(start) = self.dragging_state {
                             if let Some(end_pick) = pick(
                                 context,
                                 &camera,
@@ -133,10 +136,11 @@ impl EventHandler {
                                         }
                                 }),
                             ) {
-                                select_in_bounds(entities, start, end_pick, context);
+                                self.selector
+                                    .select_in_bounds(entities, start, end_pick, context);
                             }
-                            drop(entities.take_object(SELECTION_ID));
-                            self.dragging_state = DraggingState::NotDragging;
+                            self.selector.remove_selection_box(entities);
+                            self.dragging_state = MouseDraggingState::NotDragging;
                         }
                     }
                 }
@@ -147,7 +151,7 @@ impl EventHandler {
                     modifiers: _,
                     handled: _,
                 } => {
-                    if let DraggingState::Dragging(start) = self.dragging_state {
+                    if let MouseDraggingState::Dragging(start) = self.dragging_state {
                         if let Some(end_pick) = pick(
                             context,
                             &camera,
@@ -159,7 +163,8 @@ impl EventHandler {
                                     }
                             }),
                         ) {
-                            resize_selection(entities, start, end_pick, context)
+                            self.selector
+                                .resize_selection(entities, start, end_pick, context)
                         }
                     }
                 }

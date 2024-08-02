@@ -18,7 +18,30 @@ impl std::fmt::Display for DongoModel {
 }
 
 impl DongoModel {
-    
+
+    // 'obj_filename' does not include suffix ".obj"
+    pub fn from_obj_file(
+        context: &Context,
+        obj_filename: &str,
+        e_type: DongoEntityType,
+    ) -> DongoModel {
+        let path = format!("assets/{}/massaged_{}.obj", obj_filename,obj_filename);
+        let mut loaded = three_d_asset::io::load(&[path]).unwrap();
+        let model = loaded.deserialize(format!("{}.obj",obj_filename)).unwrap();
+        let mut model_mat = three_d::Model::<PhysicalMaterial>::new(&context, &model).unwrap();
+
+        // set cull to back
+        model_mat.iter_mut().for_each(|part| {
+            part.material.render_states.cull = Cull::Back;
+        });
+
+        DongoModel {
+            id: None,
+            desc: None,
+            model: model_mat,
+            e_type,
+        }
+    }
 }
 impl DongoEntity for DongoModel {
     fn id(&self) -> Option<ENTITYID> {
@@ -35,6 +58,14 @@ impl DongoEntity for DongoModel {
         let (x, y, z) = (transform.w.x, transform.w.y, transform.w.z);
         vec3(x, y, z)
     }
+    
+    fn set_pos(&mut self, pos: Vec3) {
+        self.model.iter_mut().for_each(|part| {
+            let mut transform = part.transformation().clone();
+            transform.w = vec4(pos.x, pos.y, pos.z, transform.w.w);
+            part.set_transformation(transform);
+        });
+    }
 
     fn add_to_pos(&mut self, pos: Vec3) {
         self.model.iter_mut().for_each(|part| {
@@ -44,12 +75,14 @@ impl DongoEntity for DongoModel {
         });
     }
 
-    fn set_pos(&mut self, pos: Vec3) {
+    fn transform(&self) -> Mat4 {
+        self.model.first().unwrap().transformation()
+    }
+
+    fn set_transform(&mut self, transform: Mat4) {
         self.model.iter_mut().for_each(|part| {
-            let mut transform = part.transformation().clone();
-            transform.w = vec4(pos.x, pos.y, pos.z, transform.w.w);
             part.set_transformation(transform);
-        });
+        })
     }
 
     fn desc(&self) -> &str {

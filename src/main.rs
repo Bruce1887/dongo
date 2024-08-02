@@ -16,7 +16,6 @@ pub fn main() {
 
     // Get the graphics context from the window
     let context = window.gl();
-    context.set_cull(Cull::FrontAndBack);
 
     let mut camera = Camera::new_perspective(
         window.viewport(),
@@ -49,35 +48,22 @@ pub fn main() {
         Mesh::new(&context, &cube_trimesh),
         PhysicalMaterial::default(),
     );
+    
     let mut dongo_cube = DongoObject::from_gm(
         cube_gm,
         DongoEntityType::Selectable {
             entity: SelectableEntity::PlayerEntity(0),
         },
     );
-    dongo_cube.set_pos(vec3(0.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
+    dongo_cube.set_pos(vec3(-20.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
     entities.add_dongo_object(dongo_cube);
-    // objects.add_object(Box::new(cube_obj), DongoEntityType::MapEntity);
-
-
-    // tree
-    let obj_path = "assets/low-poly-pinetree/massaged_low-poly-pinetree.obj";
-    let mut loaded = three_d_asset::io::load(&[obj_path]).unwrap();
-    let model = loaded.deserialize("low-poly-pinetree.obj").unwrap();
-    let mut model_mat = three_d::Model::<PhysicalMaterial>::new(&context, &model).unwrap();
-    model_mat.iter_mut().for_each(|m| {
-        m.material.render_states.cull = Cull::Back;
-        // m.set_transformation(Mat4::from_translation(vec3(0.0, 0.0, 210.0)));
-
-        m.set_transformation(Mat4::from_scale(5.0));
-    });
-
-    entities.add_dongomodel_from_model(
-        model_mat,
-        DongoEntityType::NonSelectable {
-            entity: NonSelectableEntity::WorldEntity,
-        },
+    
+    let mut tree_dm = DongoModel::from_obj_file(&context, "low-poly-pinetree", DongoEntityType::Selectable {
+        entity: SelectableEntity::PlayerEntity(0),}
     );
+    tree_dm.set_transform(Mat4::from_scale(8.0));
+    tree_dm.set_pos(vec3(050.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
+    entities.add_dongo_model(tree_dm);
 
     let mut directional_light =
         renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(2.0, 0.0, -1.0));
