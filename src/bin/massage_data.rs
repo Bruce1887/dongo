@@ -40,7 +40,7 @@ use three_d::*;
 
 pub fn run() {
     let window = Window::new(WindowSettings {
-        title: "prefab_builder!".to_string(),
+        title: "massage!".to_string(),
         max_size: Some((1280, 720)),
         ..Default::default()
     })
@@ -91,7 +91,7 @@ pub fn run() {
                     std::process::exit(0);
                 }
             }
-        }
+        } 
 
         let mut _empty_vec: Vec<&mut dyn three_d::Object> = vec![];
         let models_iter = model_mat.iter().chain(model_mat_2.iter());

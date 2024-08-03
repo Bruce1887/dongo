@@ -1,35 +1,37 @@
-use std::fmt::Debug;
+use crate::*;
 use three_d::*;
 
-#[derive(PartialEq, Debug)]
-pub enum DongoEntityType {
-    Map,
-    MapEntity,
-    PlayerEntity,
-    Selection,
-    UI,
-}
-
 pub trait DongoEntity {
-    fn get_id(&self) -> u16;
+    fn id(&self) -> Option<ENTITYID>;
 
-    fn get_type(&self) -> &DongoEntityType;
+    fn de_type(&self) -> &DongoEntityType;
 
-    fn get_pos(&self) -> Vec3;
+    fn pos(&self) -> Vec3;
 
     fn set_pos(&mut self, pos: Vec3);
 
     fn add_to_pos(&mut self, pos: Vec3);
-}
 
-impl Debug for dyn DongoEntity {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "id: {}, o_type: {:?} ", self.get_id(), self.get_type())
+    fn transform(&self) -> Mat4;
+
+    fn set_transform(&mut self, transform: Mat4);
+
+    fn is_within_bounds(&self, start: Vec3, end: Vec3) -> bool {
+        let pos = self.pos();
+        start.x.min(end.x) <= pos.x
+            && pos.x <= start.x.max(end.x)
+            && start.y.min(end.y) <= pos.y
+            && pos.y <= start.y.max(end.y)
     }
+
+    fn set_desc(&mut self, desc: String);
+
+    fn desc(&self) -> &str;
+
+    fn animate(&mut self, time: f32);
 }
 
-// used in DongoObject. Models provide handles for mesh and a material. Pure objects dont, thats why this trait is needed.
-
+// used in DongoObject. Models provide handles for mesh and a material through their modelparts. Pure objects dont, thats why this trait is needed.
 pub trait MeshMaterialProvider {
     fn geometry(&self) -> &dyn Geometry;
     fn material(&self) -> &dyn Material;

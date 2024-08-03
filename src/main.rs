@@ -16,7 +16,6 @@ pub fn main() {
 
     // Get the graphics context from the window
     let context = window.gl();
-    context.set_cull(Cull::FrontAndBack);
 
     let mut camera = Camera::new_perspective(
         window.viewport(),
@@ -28,45 +27,43 @@ pub fn main() {
         CAM_START_Z_FAR,
     );
 
-    let mut objects = DongoEntityManager::new();
+    let mut entities = DongoEntityManager::new();
 
     let map_generator = MapGenerator::read_from_file(common::MAPFILE_PATH).unwrap();
-    let map_obj = map_generator.generate(&context);
-
-    objects.add_object_with_idx(MAP_ID, Box::new(map_obj), DongoEntityType::Map);
+    // let map_generator = MapGenerator::read_from_file("output/good_mapfile").unwrap();
+    let map_gm = map_generator.generate(&context);
+    
+    entities.add_object_with_id(
+    MAP_ID,
+        Box::new(map_gm),
+        DongoEntityType::NonSelectable {
+            entity: NonSelectableEntity::WorldTerrain,
+        },
+    );
 
     let mut cube_trimesh = CpuMesh::cube();
     cube_trimesh.colors = Some(Vec::from([DONGOCOLOR_RED; 36]));
 
-    // cube_trimesh
-    //     .transform(&Mat4::from_translation(vec3(
-    //         0.0,
-    //         0.0,
-    //         MAP_MAX_HEIGHT as f32 + 1.0,
-    //     )))
-    //     .expect("Failed to transform cube");
-
-    let cube_obj = Gm::new(
+    let cube_gm = Gm::new(
         Mesh::new(&context, &cube_trimesh),
         PhysicalMaterial::default(),
     );
-
-    objects.add_object(Box::new(cube_obj), DongoEntityType::MapEntity);
-
-    // tree
-    let obj_path = "assets/low-poly-pinetree/massaged_low-poly-pinetree.obj";
-    let mut loaded = three_d_asset::io::load(&[obj_path]).unwrap();
-    let model = loaded.deserialize("low-poly-pinetree.obj").unwrap();
-    let mut model_mat = three_d::Model::<PhysicalMaterial>::new(&context, &model).unwrap();
-    model_mat.iter_mut().for_each(|m| {
-        m.material.render_states.cull = Cull::Back;
-        // m.set_transformation(Mat4::from_translation(vec3(0.0, 0.0, 210.0)));
-
-        m.set_transformation(Mat4::from_scale(5.0));
-    });
-
-
-    objects.add_model(model_mat, DongoEntityType::MapEntity);
+    
+    let mut cube_do = DongoObject::from_gm(
+        cube_gm,
+        DongoEntityType::Selectable {
+            entity: SelectableEntity::PlayerEntity(0),
+        },
+    );
+    cube_do.set_pos(vec3(-20.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
+    entities.add_dongo_object(cube_do);
+    
+    let mut tree_dm = DongoModel::from_obj_file(&context, "low-poly-pinetree", DongoEntityType::Selectable {
+        entity: SelectableEntity::PlayerEntity(0),}
+    );
+    tree_dm.set_transform(Mat4::from_scale(8.0));
+    tree_dm.set_pos(vec3(20.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
+    entities.add_dongo_model(tree_dm);
 
     let mut directional_light =
         renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(2.0, 0.0, -1.0));
@@ -81,20 +78,31 @@ pub fn main() {
     {
         // Ensure the viewport matches the current window viewport which changes if the window is resized
         camera.set_viewport(frame_input.viewport);
- 
+
         // Check for events
-        ev_handler.handle_events(&frame_input.events, &mut camera, &context, &mut objects);
+        ev_handler.handle_events(&frame_input.events, &mut camera, &context, &mut entities);
 
-        let obj_vec = objects.get_objects_vec(|o: &DongoObject| o.get_type() != &DongoEntityType::Selection);
+        entities.all_as_entities().iter_mut().for_each(|e| {
+            match e.de_type() {
+                DongoEntityType::NonSelectable {
+                    entity: NonSelectableEntity::SelectionMarker(_),
+                } => {
+                    e.animate(frame_input.accumulated_time as f32);
+                }
+                _ => (),
+            }
+        });
 
-        directional_light.generate_shadow_map(1024, &obj_vec);
+        let objects_to_light = entities.all_as_object(|entity| entity.de_type() != &DongoEntityType::NonSelectable { entity: NonSelectableEntity::SelectionBox });
+
+        directional_light.generate_shadow_map(1024, &objects_to_light);
 
         // Get the screen render target to be able to render something on the screen
         frame_input.screen()
             // Clear the color and depth of the screen render target
             .clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 1.0, 1.0))
             .render(
-                &camera, objects.get_objects_vec(no_predicate), &[&directional_light,&ambient_light]
+                &camera, entities.all_as_object(no_predicate), &[&directional_light,&ambient_light]
             );
         // Returns default frame output to end the frame
         FrameOutput::default()

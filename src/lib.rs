@@ -3,6 +3,7 @@ pub mod common;
 pub mod error;
 pub mod event_handler;
 pub mod map_generator;
+pub mod shapes;
 
 //modules in folders under src/
 pub mod user_control;

@@ -45,8 +45,8 @@ pub fn main() {
 
     let colors = vec![
         Srgba::BLUE, // bottom right
-        Srgba::BLUE, // bottom left
-        Srgba::BLUE, // top
+        Srgba::WHITE, // bottom left
+        Srgba::RED, // top
     ];
     let mut triangle_mesh = CpuMesh {
         positions: Positions::F32(positions),

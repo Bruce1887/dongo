@@ -9,17 +9,18 @@ pub struct EventHandler {
     shift_down: bool,
     ctrl_down: bool,
     alt_down: bool,
-    dragging_state: DraggingState,
     // cmd_down: bool, // command is the ctrl key on windows and linux
+    dragging_state: MouseDraggingState,
+    selector: DongoSelector,
 }
 
-enum DraggingState {
+enum MouseDraggingState {
     Dragging(Vec3),
     NotDragging,
 }
-impl Default for DraggingState {
+impl Default for MouseDraggingState {
     fn default() -> Self {
-        DraggingState::NotDragging
+        MouseDraggingState::NotDragging
     }
 }
 
@@ -35,7 +36,7 @@ impl EventHandler {
         events: &Vec<Event>,
         camera: &mut Camera,
         context: &Context,
-        objects: &mut DongoEntityManager,
+        entities: &mut DongoEntityManager,
     ) {
         for ev in events {
             match ev {
@@ -70,13 +71,14 @@ impl EventHandler {
                         camera.set_view(CAM_START_POS, CAM_START_TARGET, CAM_START_UP);
                     }
 
+                    if *kind == Key::Z {
+                        let selected = self.selector.get_selected();
+                        dbg!(selected);
+                        self.selector.clear_selection(entities);
+                    }
+
                     if *kind == Key::X {
-                        for obj in objects.get_objects() {
-                            if obj.get_id() == 0 {
-                                dbg!(obj.mm_provider.mesh().transformation());
-                                obj.add_to_pos(vec3(0.0, 0.0, 10.0))
-                            }
-                        }
+                        println!("{entities}");
                     }
                 }
                 Event::KeyRelease {
@@ -103,26 +105,42 @@ impl EventHandler {
                             context,
                             &camera,
                             *position,
-                            objects.get_objects_vec(|o: &DongoObject| {
-                                o.get_type() == &DongoEntityType::Map
+                            entities.all_as_object(|entity| {
+                                entity.de_type()
+                                    == &DongoEntityType::NonSelectable {
+                                        entity: NonSelectableEntity::WorldTerrain,
+                                    }
                             }),
                         ) {
                             //pick_mesh.set_transformation(Mat4::from_translation(pick));
-                            self.dragging_state = DraggingState::Dragging(start_pick);
+                            self.dragging_state = MouseDraggingState::Dragging(start_pick);
                         }
                     }
                 }
                 Event::MouseRelease {
                     button,
-                    position: _,
+                    position,
                     modifiers: _,
                     handled: _,
                 } => {
                     if *button == MouseButton::Left {
-                        if let DraggingState::Dragging(_) = self.dragging_state {
-                            drop(objects.take_obj(SELECTION_ID));
-                            //resize_selection(objects, start, *position, context)
-                            self.dragging_state = DraggingState::NotDragging;
+                        if let MouseDraggingState::Dragging(start) = self.dragging_state {
+                            if let Some(end_pick) = pick(
+                                context,
+                                &camera,
+                                *position,
+                                entities.all_as_object(|entity| {
+                                    entity.de_type()
+                                        == &DongoEntityType::NonSelectable {
+                                            entity: NonSelectableEntity::WorldTerrain,
+                                        }
+                                }),
+                            ) {
+                                self.selector
+                                    .select_in_bounds(entities, start, end_pick, context);
+                            }
+                            self.selector.remove_selection_box(entities);
+                            self.dragging_state = MouseDraggingState::NotDragging;
                         }
                     }
                 }
@@ -133,16 +151,20 @@ impl EventHandler {
                     modifiers: _,
                     handled: _,
                 } => {
-                    if let DraggingState::Dragging(start) = self.dragging_state {
+                    if let MouseDraggingState::Dragging(start) = self.dragging_state {
                         if let Some(end_pick) = pick(
                             context,
                             &camera,
                             *position,
-                            objects.get_objects_vec(|o: &DongoObject| {
-                                o.get_type() == &DongoEntityType::Map
+                            entities.all_as_object(|entity| {
+                                entity.de_type()
+                                    == &DongoEntityType::NonSelectable {
+                                        entity: NonSelectableEntity::WorldTerrain,
+                                    }
                             }),
                         ) {
-                            resize_selection(objects, start, end_pick, context)
+                            self.selector
+                                .resize_selection(entities, start, end_pick, context)
                         }
                     }
                 }
