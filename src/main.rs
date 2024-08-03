@@ -27,12 +27,10 @@ pub fn main() {
         CAM_START_Z_FAR,
     );
 
-    let mut entities = DongoEntityManager::new();
-
-    let map_generator = MapGenerator::read_from_file(common::MAPFILE_PATH).unwrap();
-    // let map_generator = MapGenerator::read_from_file("output/good_mapfile").unwrap();
-    let map_gm = map_generator.generate(&context);
+    let mut entities = DongoEntityManager::new();    
     
+    let map_generator = MapGenerator::read_from_file(common::MAPFILE_PATH).unwrap();
+    let map_gm = map_generator.generate(&context);
     entities.add_object_with_id(
     MAP_ID,
         Box::new(map_gm),
@@ -40,7 +38,7 @@ pub fn main() {
             entity: NonSelectableEntity::WorldTerrain,
         },
     );
-
+    
     let mut cube_trimesh = CpuMesh::cube();
     cube_trimesh.colors = Some(Vec::from([DONGOCOLOR_RED; 36]));
 
@@ -97,12 +95,18 @@ pub fn main() {
 
         directional_light.generate_shadow_map(1024, &objects_to_light);
 
+        let all_objects = entities.all_as_object(no_predicate);
+
+        //terra.into_iter().for_each(|obj| {
+        //    all_objects.push(obj);
+        //});
+
         // Get the screen render target to be able to render something on the screen
         frame_input.screen()
             // Clear the color and depth of the screen render target
             .clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 1.0, 1.0))
             .render(
-                &camera, entities.all_as_object(no_predicate), &[&directional_light,&ambient_light]
+                &camera, all_objects, &[&directional_light,&ambient_light]
             );
         // Returns default frame output to end the frame
         FrameOutput::default()

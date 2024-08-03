@@ -7,7 +7,8 @@ pub const SELECTION_BOX_ID: u16 = u16::MAX - 1;
 pub struct DongoEntityManager {
     objects: Vec<DongoObject>,
     next_vacant_id: ENTITYID,
-    pub models: Vec<DongoModel>,
+    models: Vec<DongoModel>,
+    // entities: Vec<Box<dyDongoEntity>>,
 }
 
 impl std::fmt::Display for DongoEntityManager {

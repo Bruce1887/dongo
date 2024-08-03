@@ -21,6 +21,7 @@ use std::{fs::File, io::prelude::*};
 
    objects.add_object(Box::new(terra), DongoObjectType::MapEntity);
 */
+
 #[allow(dead_code)]
 pub enum ColorMode {
     HeightMap,
@@ -53,6 +54,31 @@ impl MapGenerator {
         }
     }
 
+    // i dont like the Terrain struct. 
+    pub fn _generate_terrain(&self, context: &Context) -> Terrain<PhysicalMaterial> {
+        let height_map = std::sync::Arc::new(move |x, y| x + y );
+        // let height_map = std::sync::Arc::new(move |x:f32, y:f32| x.sin() + y.cos() );
+
+        let terra = Terrain::new(
+            &context,
+            PhysicalMaterial::default(),
+            height_map,
+            512.0,
+            1.0,
+            vec2(0.0, 0.0),
+        );
+
+
+        
+
+        terra.into_iter().for_each(|obj| {
+            dbg!(obj.aabb().center());
+        });
+
+
+        terra
+    }
+    
     pub fn define_parameters(&mut self, colormode: ColorMode) {
         dbg!(self.square_tuple, self.verts_tuple);
         self.define_positions();
