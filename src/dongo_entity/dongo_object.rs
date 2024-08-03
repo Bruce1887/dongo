@@ -25,7 +25,7 @@ impl DongoObject {
     ) -> DongoObject {
 
         // set cull to back
-        mmp.material().render_states().cull = Cull::Front;
+        mmp.material().render_states().cull = Cull::Front; // this has no effect
 
         DongoObject {
             id: Some(id),
@@ -36,9 +36,10 @@ impl DongoObject {
     }
 
     pub fn from_gm<M: Material + 'static>(gm: Gm<Mesh, M>, e_type: DongoEntityType) -> DongoObject {
+        
         // set cull to back
-        gm.material.render_states().cull = Cull::Front; // this has no effect
-        dbg!(gm.material.render_states().cull);
+        gm.material.render_states().cull = Cull::Back; // this has no effect
+
         DongoObject {
             id: None,
             desc: None,

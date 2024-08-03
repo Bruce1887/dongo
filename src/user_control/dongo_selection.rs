@@ -4,7 +4,7 @@ use crate::dongo_entity::*;
 use crate::dongo_entity_manager::DongoEntityManager;
 use crate::shapes::*;
 
-const SELECTION_BOX_COLOR: Srgba = Srgba::new(255, 255, 0, 150); // a yellow color thats kinda transparent
+const SELECTION_BOX_COLOR: Srgba = Srgba::new(255, 255, 0, 150); // a yellow color thats kinda transparente
 const SELECTION_MARKER_COLOR: Srgba = Srgba::new(255, 255, 0, 170); // a yellow color thats a bit less transparent
 const SELECTION_BOX_HEIGHT_EXTRA: f32 = 10.0;
 const SELECTION_MARKER_HEIGHT_EXTRA: f32 = 20.0;
@@ -34,9 +34,7 @@ impl DongoSelector {
             let entity = entities.get_entity_by_id(*id).unwrap();
             let mut pos = entity.pos(); 
 
-            
             pos.z += SELECTION_MARKER_HEIGHT_EXTRA;
-            println!("marker pos: ({},{},{})", pos.x,pos.y,pos.z);
             let marker_trimesh = create_marker_trimesh(3.0, 3.0, SELECTION_MARKER_COLOR);
             // marker_trimesh.compute_normals();
             let mut marker_gm = Gm::new(
@@ -57,10 +55,9 @@ impl DongoSelector {
             });
 
             marker_do.set_pos(pos);
-            dbg!(marker_do.transform());
 
             let marker_id = entities.add_dongo_object(marker_do);
-            println!("added marker with id: {}", marker_id);
+            println!("added marker with id: {} and target {}", marker_id, id);
             self.markers.push(marker_id);
         });
     }
@@ -103,7 +100,7 @@ impl DongoSelector {
     ) {
         // remove previous selection
         self.clear_selection(entities);
-        
+
         let inside = entities.get_all_within_bounds(start, end);
         inside.iter().for_each(|tuple| match tuple {
             (Some(id), DongoEntityType::Selectable { entity: _ }) => {
@@ -151,13 +148,13 @@ impl DongoSelector {
                 );
 
                 entities.add_object_with_id(
-                    SELECTION_ID,
+                    SELECTION_BOX_ID,
                     Box::new(selectionbox_gm),
                     DongoEntityType::NonSelectable {
                         entity: NonSelectableEntity::SelectionBox,
                     },
                 );
-                self.selection_box = Some(SELECTION_ID);
+                self.selection_box = Some(SELECTION_BOX_ID);
             }
         }
     }

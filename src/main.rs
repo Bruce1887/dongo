@@ -31,11 +31,11 @@ pub fn main() {
 
     let map_generator = MapGenerator::read_from_file(common::MAPFILE_PATH).unwrap();
     // let map_generator = MapGenerator::read_from_file("output/good_mapfile").unwrap();
-    let map_obj = map_generator.generate(&context);
-
+    let map_gm = map_generator.generate(&context);
+    
     entities.add_object_with_id(
-        MAP_ID,
-        Box::new(map_obj),
+    MAP_ID,
+        Box::new(map_gm),
         DongoEntityType::NonSelectable {
             entity: NonSelectableEntity::WorldTerrain,
         },
@@ -49,20 +49,20 @@ pub fn main() {
         PhysicalMaterial::default(),
     );
     
-    let mut dongo_cube = DongoObject::from_gm(
+    let mut cube_do = DongoObject::from_gm(
         cube_gm,
         DongoEntityType::Selectable {
             entity: SelectableEntity::PlayerEntity(0),
         },
     );
-    dongo_cube.set_pos(vec3(-20.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
-    entities.add_dongo_object(dongo_cube);
+    cube_do.set_pos(vec3(-20.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
+    entities.add_dongo_object(cube_do);
     
     let mut tree_dm = DongoModel::from_obj_file(&context, "low-poly-pinetree", DongoEntityType::Selectable {
         entity: SelectableEntity::PlayerEntity(0),}
     );
     tree_dm.set_transform(Mat4::from_scale(8.0));
-    tree_dm.set_pos(vec3(050.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
+    tree_dm.set_pos(vec3(20.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
     entities.add_dongo_model(tree_dm);
 
     let mut directional_light =
@@ -93,9 +93,9 @@ pub fn main() {
             }
         });
 
-        let obj_vec = entities.all_as_object(|entity| entity.de_type() != &DongoEntityType::NonSelectable { entity: NonSelectableEntity::SelectionBox });
+        let objects_to_light = entities.all_as_object(|entity| entity.de_type() != &DongoEntityType::NonSelectable { entity: NonSelectableEntity::SelectionBox });
 
-        directional_light.generate_shadow_map(1024, &obj_vec);
+        directional_light.generate_shadow_map(1024, &objects_to_light);
 
         // Get the screen render target to be able to render something on the screen
         frame_input.screen()

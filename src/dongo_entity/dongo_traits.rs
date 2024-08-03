@@ -31,7 +31,7 @@ pub trait DongoEntity {
     fn animate(&mut self, time: f32);
 }
 
-// used in DongoObject. Models provide handles for mesh and a material. Pure objects dont, thats why this trait is needed.
+// used in DongoObject. Models provide handles for mesh and a material through their modelparts. Pure objects dont, thats why this trait is needed.
 pub trait MeshMaterialProvider {
     fn geometry(&self) -> &dyn Geometry;
     fn material(&self) -> &dyn Material;

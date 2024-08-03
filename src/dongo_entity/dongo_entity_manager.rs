@@ -2,7 +2,7 @@ use crate::*;
 use three_d::*;
 
 pub const MAP_ID: u16 = u16::MAX;
-pub const SELECTION_ID: u16 = u16::MAX - 1;
+pub const SELECTION_BOX_ID: u16 = u16::MAX - 1;
 
 pub struct DongoEntityManager {
     objects: Vec<DongoObject>,
