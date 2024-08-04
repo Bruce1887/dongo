@@ -2,3 +2,4 @@
 mapgen = "run --bin generate_map"
 cull = "run --bin test_cull"
 massage = "run --bin massage_data"
+entity = "run --bin test_entity"

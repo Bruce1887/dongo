@@ -30,6 +30,7 @@ impl DongoModel {
         let model = loaded.deserialize(format!("{}.obj",obj_filename)).unwrap();
         let mut model_mat = three_d::Model::<PhysicalMaterial>::new(&context, &model).unwrap();
 
+        
         // set cull to back
         model_mat.iter_mut().for_each(|part| {
             part.material.render_states.cull = Cull::Back;
