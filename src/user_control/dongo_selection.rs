@@ -35,6 +35,7 @@ impl DongoSelector {
             let mut pos = entity.pos(); 
 
             pos.z += SELECTION_MARKER_HEIGHT_EXTRA;
+            /*
             let marker_trimesh = create_marker_trimesh(3.0, 3.0, SELECTION_MARKER_COLOR);
             // marker_trimesh.compute_normals();
             let mut marker_gm = Gm::new(
@@ -59,13 +60,14 @@ impl DongoSelector {
             let marker_id = entities.add_dongo_object(marker_do);
             println!("added marker with id: {} and target {}", marker_id, id);
             self.markers.push(marker_id);
+            */
         });
     }
 
     pub fn remove_selection_box(&mut self, entities: &mut DongoEntityManager) {
         match self.selection_box {
             Some(id) => {
-                entities.take_object(id);
+                entities.take_entity_by_id(id);
             }
             None => (),
         }
@@ -75,7 +77,7 @@ impl DongoSelector {
     fn remove_markers(&mut self, entities: &mut DongoEntityManager) {
         self.markers.iter().for_each(|id| {
             println!("removing marker with id: {}", id);
-            entities.take_object(*id);
+            entities.take_entity_by_id(*id);
         });
         self.markers.clear();
     }
@@ -102,13 +104,13 @@ impl DongoSelector {
         self.clear_selection(entities);
 
         let inside = entities.get_all_within_bounds(start, end);
-        inside.iter().for_each(|tuple| match tuple {
-            (Some(id), DongoEntityType::Selectable { entity: _ }) => {
-                println!("entity with id: {} is inside of selected_box", id);
-                self.selected.push(*id);
-            }
-            _ => (),
-        });
+        // inside.iter().for_each(|tuple| match tuple {
+        //     (Some(id), DongoEntityType::Selectable { entity: _ }) => {
+        //         println!("entity with id: {} is inside of selected_box", id);
+        //         self.selected.push(*id);
+        //     }
+        //     _ => (),
+        // });
 
         self.add_markers_to_render(entities, context);
     }
@@ -125,13 +127,15 @@ impl DongoSelector {
         end.z = crate::common::MAP_MAX_HEIGHT as f32 + SELECTION_BOX_HEIGHT_EXTRA;
 
         match self.selection_box {
-            Some(id) => {
-                let selection_box = entities.get_object_by_id(id).unwrap();
-                let positions = create_box_positions(start, end).to_vec();
-                selection_box
-                    .mm_provider
-                    .mesh_mut()
-                    .update_positions(&positions);
+            Some(selection_box_id) => {
+                let selection_box = entities.get_entity_by_id_mut(selection_box_id).unwrap();
+                if let DongoEntity::Object(mmp,_) = selection_box {
+                    let positions = create_box_positions(start, end).to_vec();
+                    mmp.mesh_mut().update_positions(&positions);                    
+                }
+                else {
+                    panic!("selection box is not a DongoEntity::Object");
+                }
             }
             None => {
                 let box_trimesh = create_box_trimesh(start, end, SELECTION_BOX_COLOR);
@@ -146,15 +150,10 @@ impl DongoSelector {
                         },
                     ),
                 );
+                
+                let id = entities.add_entity_from_gm(selectionbox_gm, DongoMetadata::new_empty());
 
-                entities.add_object_with_id(
-                    SELECTION_BOX_ID,
-                    Box::new(selectionbox_gm),
-                    DongoEntityType::NonSelectable {
-                        entity: NonSelectableEntity::SelectionBox,
-                    },
-                );
-                self.selection_box = Some(SELECTION_BOX_ID);
+                self.selection_box = Some(id);
             }
         }
     }

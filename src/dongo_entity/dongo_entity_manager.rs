@@ -1,219 +1,90 @@
+use ::core::panic;
+
 use crate::*;
 use three_d::*;
 
-pub const MAP_ID: u16 = u16::MAX;
-pub const SELECTION_BOX_ID: u16 = u16::MAX - 1;
-
 pub struct DongoEntityManager {
-    objects: Vec<DongoObject>,
+    e_vec: Vec<DongoEntity>,
     next_vacant_id: ENTITYID,
-    models: Vec<DongoModel>,
-    // entities: Vec<Box<dyDongoEntity>>,
-}
-
-impl std::fmt::Display for DongoEntityManager {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut str = String::new();
-        str.push_str("___Entities___\n");
-        str.push_str("==============\n");
-        str.push_str("   Objects    \n");
-        for obj in &self.objects {
-            str.push_str(&format!("{}\n", obj));
-        }
-        str.push_str("\n");
-        str.push_str("    Models   \n");
-        for model in &self.models {
-            str.push_str(&format!("{}\n", model));
-        }
-        str.push_str("==============\n");
-        write!(f, "{}", str)
-    }
 }
 
 impl DongoEntityManager {
     pub fn new() -> DongoEntityManager {
         DongoEntityManager {
-            objects: Vec::new(),
-            next_vacant_id: 0,
-            models: Vec::new(),
+            e_vec: Vec::new(),
+            next_vacant_id: ENTITYID::MIN,
         }
     }
-
-    // used in mouse_selection among others. Should only be used for certain stuff.
-    pub fn add_object_with_id(
-        &mut self,
-        id: ENTITYID,
-        mm_provider: Box<dyn MeshMaterialProvider>,
-        e_type: DongoEntityType,
-    ) {
-        self.objects
-            .push(DongoObject::new_with_id(id, mm_provider, e_type));
+    
+    fn _get_entities(&self) -> &Vec<DongoEntity> {
+        &self.e_vec
     }
 
-    pub fn add_object_from_mmp(
-        &mut self,
-        mm_provider: Box<dyn MeshMaterialProvider>,
-        e_type: DongoEntityType,
-    ) -> ENTITYID{
-        let identifier = self.next_vacant_id;
-        self.objects.push(DongoObject::new_with_id(
-            identifier,
-            mm_provider,
-            e_type,
-        ));
-        self.next_vacant_id += 1;
-        identifier
-    }
+    pub fn get_objects(&self) -> Vec<&dyn Object> {
+        let mut objects: Vec<&dyn Object> = Vec::new();
 
-    pub fn add_dongo_object(&mut self, mut dongo_object: DongoObject) -> ENTITYID{
-        let identifier = self.next_vacant_id;
-        dongo_object.id = Some(identifier);
-        self.objects.push(dongo_object);
-        self.next_vacant_id += 1;
-        identifier
-    }
-
-    pub fn add_dongo_model(&mut self, mut dmodel: DongoModel) -> ENTITYID{
-        let identifier = self.next_vacant_id;
-        dmodel.id = Some(identifier);
-        self.models.push(dmodel);
-        self.next_vacant_id += 1;
-        identifier
-    }
-
-    pub fn add_dongomodel_from_model(
-        &mut self,
-        model: Model<PhysicalMaterial>,
-        e_type: DongoEntityType,
-    ) -> ENTITYID {
-        let identifier = self.next_vacant_id;
-        self.models.push(DongoModel {
-            id: Some(identifier),
-            desc: None,
-            model,
-            e_type,
-        });
-        self.next_vacant_id += 1;
-        identifier
-    }
-
-    // pub fn remove_many_objects(&mut self, closure: impl Fn(&DongoObject) -> bool) {
-    //     self.objects.retain(|obj| !closure(obj));
-    // }
-
-    pub fn take_object(&mut self, id: u16) -> Option<DongoObject> {
-        if let Some(index) = self.objects.iter().position(|obj| obj.id() == Some(id)) {
-            Some(self.objects.remove(index))
-        } else {
-            None
-        }
-    }
-
-    pub fn take_model(&mut self, id: u16) -> Option<DongoModel> {
-        if let Some(index) = self.models.iter().position(|model| model.id == Some(id)) {
-            Some(self.models.remove(index))
-        } else {
-            None
-        }
-    }
-
-    pub fn get_object_by_id(&mut self, id: u16) -> Option<&mut DongoObject> {
-        for obj in &mut self.objects {
-            if obj.id() == Some(id) {
-                return Some(obj);
+        self.e_vec.iter().for_each(|e| {
+            match e {
+                DongoEntity::Object(mmp, _) => objects.push(mmp.object()),
+                DongoEntity::Model(m, _) => m.iter().for_each(|part| objects.push(part)),
+                // DongoEntity::ColorModel(m) => m.iter().for_each(|part| objects.push(part)),
             }
-        }
-        None
+        });   
+
+        objects
     }
 
-    pub fn get_model_by_id(&mut self, id: u16) -> Option<&mut DongoModel> {
-        for model in &mut self.models {
-            if model.id == Some(id) {
-                return Some(model);
+    pub fn filter_to_entities(&self, predicate: impl Fn(&DongoEntity) -> bool) -> Vec<&DongoEntity> {
+        self.e_vec.iter().filter(|e| predicate(*e)).collect()
+    }
+
+    pub fn filter_to_entities_mut(&mut self, predicate: impl Fn(&DongoEntity) -> bool) -> Vec<&mut DongoEntity> {
+        self.e_vec.iter_mut().filter(|e| predicate(*e)).collect()
+    }
+
+    pub fn filter_to_objects(&self, predicate: impl Fn(&DongoEntity) -> bool) -> Vec<&dyn Object> {
+        let mut objects: Vec<&dyn Object> = Vec::new();
+
+        self.e_vec.iter().filter(|e| predicate(*e) ).for_each(|e| {
+            match e {
+                DongoEntity::Object(mmp, _) => objects.push(mmp.object()),
+                DongoEntity::Model(m, _) => m.iter().for_each(|part| objects.push(part)),
+                // DongoEntity::ColorModel(m) => m.iter().for_each(|part| objects.push(part)),
             }
-        }
-        None
+        });   
+
+        objects
     }
 
-    pub fn get_entity_by_id(&mut self, id: u16) -> Option<&mut dyn DongoEntity> {
-        let found = self
-            .objects
-            .iter_mut()
-            .map(|obj| obj as &mut dyn DongoEntity)
-            .chain(
-                self.models
-                    .iter_mut()
-                    .map(|model| model as &mut dyn DongoEntity),
-            )
-            .find(|e| e.id() == Some(id));
-
-        found
+    pub fn add_entity(&mut self, mut entity: DongoEntity) -> ENTITYID {
+        let id = self.next_vacant_id;
+        entity.metadata_mut().set_id_achtung(id);
+        self.e_vec.push(entity);
+        self.next_vacant_id += 1;
+        id
     }
 
-    pub fn get_objects(&mut self) -> &mut Vec<DongoObject> {
-        &mut self.objects
-    }
-    pub fn get_models(&self) -> &Vec<DongoModel> {
-        &self.models
-    }
-
-    pub fn all_as_entities(&mut self) -> Vec<&mut dyn DongoEntity> {
-        let mut entities: Vec<&mut dyn DongoEntity> = Vec::new();
-        entities.extend(
-            self.objects
-                .iter_mut()
-                .map(|obj| obj as &mut dyn DongoEntity),
-        );
-        entities.extend(
-            self.models
-                .iter_mut()
-                .map(|model| model as &mut dyn DongoEntity),
-        );
-        entities
+    pub fn add_entity_from_gm<M: Material + 'static>(&mut self, gm: Gm<Mesh, M>, mut meta: DongoMetadata) -> ENTITYID {
+        let id = self.next_vacant_id;
+        meta.set_id_achtung(id);
+        self.add_entity(DongoEntity::Object(Box::new(gm), meta));
+        self.next_vacant_id += 1;
+        id
     }
 
-    // gets all objects and models that satisfy the predicate
-    pub fn all_as_object(&self, predicate: impl Fn(&dyn DongoEntity) -> bool) -> Vec<&dyn Object> {
-        self.objects
-            .iter()
-            .filter(|obj| predicate(*obj as &dyn DongoEntity))
-            .map(|obj| obj.get_object())
-            .chain(
-                self.models
-                    .iter()
-                    .filter(|m| predicate(*m as &dyn DongoEntity))
-                    .flat_map(|m| m.model.iter().map(|part| part as &dyn Object)),
-            )
-            .collect()
+    pub fn get_entity_by_id(&self, id: u16) -> Option<&DongoEntity> {
+        self.e_vec.iter().find(|e| e.metadata().id() == Some(id))
     }
 
-    pub fn get_all_within_bounds(
-        &self,
-        start: Vec3,
-        end: Vec3,
-    ) -> Vec<(Option<ENTITYID>, DongoEntityType)> {
-        let mut entities: Vec<&dyn DongoEntity> = Vec::new();
-        entities.extend(
-            self.objects
-                .iter()
-                .filter(|obj| obj.is_within_bounds(start, end))
-                .map(|obj| obj as &dyn DongoEntity),
-        );
-        entities.extend(
-            self.models
-                .iter()
-                .filter(|model| model.is_within_bounds(start, end))
-                .map(|model| model as &dyn DongoEntity),
-        );
-
-        let mut r_value: Vec<(Option<ENTITYID>, DongoEntityType)> = Vec::new();
-        for e in entities {
-            r_value.push((e.id(), *e.de_type()));
-        }
-        r_value
+    pub fn get_entity_by_id_mut(&mut self, id: u16) -> Option<&mut DongoEntity> {
+        self.e_vec.iter_mut().find(|e| e.metadata().id() == Some(id))
     }
-}
 
-pub const fn no_predicate(_: &dyn crate::dongo_traits::DongoEntity) -> bool {
-    true
+    pub fn take_entity_by_id(&mut self, id: u16) -> Option<DongoEntity> {
+        self.e_vec.iter_mut().position(|e| e.metadata().id() == Some(id)).map(|i| self.e_vec.remove(i))
+    }
+
+    pub fn get_all_within_bounds(&self, start: Vec3, end: Vec3) -> Vec<&dyn Object> {
+        panic!()
+    }
 }

@@ -31,14 +31,11 @@ pub fn main() {
     
     let map_generator = MapGenerator::read_from_file(common::MAPFILE_PATH).unwrap();
     let map_gm = map_generator.generate(&context);
-    entities.add_object_with_id(
-    MAP_ID,
-        Box::new(map_gm),
-        DongoEntityType::NonSelectable {
-            entity: NonSelectableEntity::WorldTerrain,
-        },
-    );
+
+    let map_entity = DongoEntity::from_gm(map_gm, DongoMetadata::new(Some("The map metadata!"), vec![TAG_MAP]));
+    entities.add_entity(map_entity);
     
+
     let mut cube_trimesh = CpuMesh::cube();
     cube_trimesh.colors = Some(Vec::from([DONGOCOLOR_RED; 36]));
 
@@ -47,21 +44,14 @@ pub fn main() {
         PhysicalMaterial::default(),
     );
     
-    let mut cube_do = DongoObject::from_gm(
-        cube_gm,
-        DongoEntityType::Selectable {
-            entity: SelectableEntity::PlayerEntity(0),
-        },
-    );
-    cube_do.set_pos(vec3(-20.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
-    entities.add_dongo_object(cube_do);
+    let mut cube_entity = DongoEntity::from_gm(cube_gm, DongoMetadata::new_empty());
+    cube_entity.set_pos(vec3(-20.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
+    entities.add_entity(cube_entity);
     
-    let mut tree_dm = DongoModel::from_obj_file(&context, "low-poly-pinetree", DongoEntityType::Selectable {
-        entity: SelectableEntity::PlayerEntity(0),}
-    );
-    tree_dm.set_transform(Mat4::from_scale(8.0));
-    tree_dm.set_pos(vec3(20.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
-    entities.add_dongo_model(tree_dm);
+    let mut tree_entity = DongoEntity::from_obj_file(&context, "low-poly-pinetree", DongoMetadata::new_empty());
+    tree_entity.set_transform(Mat4::from_scale(8.0));
+    tree_entity.set_pos(vec3(20.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
+    entities.add_entity(tree_entity);
 
     let mut directional_light =
         renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(2.0, 0.0, -1.0));
@@ -77,29 +67,16 @@ pub fn main() {
         // Ensure the viewport matches the current window viewport which changes if the window is resized
         camera.set_viewport(frame_input.viewport);
 
-        // Check for events
         ev_handler.handle_events(&frame_input.events, &mut camera, &context, &mut entities);
 
-        entities.all_as_entities().iter_mut().for_each(|e| {
-            match e.de_type() {
-                DongoEntityType::NonSelectable {
-                    entity: NonSelectableEntity::SelectionMarker(_),
-                } => {
-                    e.animate(frame_input.accumulated_time as f32);
-                }
-                _ => (),
-            }
+        entities.filter_to_entities_mut(|e| e.has_tag(TAG_SELECTABLE)).iter_mut().for_each(|e| {
+            e.animate(frame_input.accumulated_time as f32);
         });
 
-        let objects_to_light = entities.all_as_object(|entity| entity.de_type() != &DongoEntityType::NonSelectable { entity: NonSelectableEntity::SelectionBox });
 
-        directional_light.generate_shadow_map(1024, &objects_to_light);
+        directional_light.generate_shadow_map(1024, entities.filter_to_objects(|e| e.has_tag(TAG_MAP)));
 
-        let all_objects = entities.all_as_object(no_predicate);
-
-        //terra.into_iter().for_each(|obj| {
-        //    all_objects.push(obj);
-        //});
+        let all_objects = entities.get_objects();
 
         // Get the screen render target to be able to render something on the screen
         frame_input.screen()
