@@ -35,7 +35,7 @@ impl DongoSelector {
             let mut pos = entity.pos(); 
 
             pos.z += SELECTION_MARKER_HEIGHT_EXTRA;
-            /*
+            
             let marker_trimesh = create_marker_trimesh(3.0, 3.0, SELECTION_MARKER_COLOR);
             // marker_trimesh.compute_normals();
             let mut marker_gm = Gm::new(
@@ -49,18 +49,14 @@ impl DongoSelector {
                 ),
             );
 
-            marker_gm.set_animation(|time| Mat4::from_angle_z(radians(time * 0.0005)));
+            marker_gm.set_animation(|time| Mat4::from_angle_z(radians(time * 0.005)));
 
-            let mut marker_do = DongoObject::from_gm(marker_gm, DongoEntityType::NonSelectable {
-                entity: NonSelectableEntity::SelectionMarker(*id),
-            });
+            let mut marker_entity = DongoEntity::from_gm(marker_gm, DongoMetadata::new(Some("Selectionmarker metadata!"), vec![TAG_HAS_ANIMATION]));
+            marker_entity.set_pos(pos);
 
-            marker_do.set_pos(pos);
-
-            let marker_id = entities.add_dongo_object(marker_do);
-            println!("added marker with id: {} and target {}", marker_id, id);
+            let marker_id = entities.add_entity(marker_entity);
+            //println!("added marker with id: {} and target {}", marker_id, id);
             self.markers.push(marker_id);
-            */
         });
     }
 
@@ -104,13 +100,11 @@ impl DongoSelector {
         self.clear_selection(entities);
 
         let inside = entities.get_all_within_bounds(start, end);
-        // inside.iter().for_each(|tuple| match tuple {
-        //     (Some(id), DongoEntityType::Selectable { entity: _ }) => {
-        //         println!("entity with id: {} is inside of selected_box", id);
-        //         self.selected.push(*id);
-        //     }
-        //     _ => (),
-        // });
+        inside.iter().for_each(|e| {
+            self.selected.push(e.id().expect("Tried to select an entity without an id!"));
+            // dbg!(e.id());
+        });
+
 
         self.add_markers_to_render(entities, context);
     }
@@ -129,7 +123,7 @@ impl DongoSelector {
         match self.selection_box {
             Some(selection_box_id) => {
                 let selection_box = entities.get_entity_by_id_mut(selection_box_id).unwrap();
-                if let DongoEntity::Object(mmp,_) = selection_box {
+                if let DongoEntity::Object(mmp,_,_) = selection_box {
                     let positions = create_box_positions(start, end).to_vec();
                     mmp.mesh_mut().update_positions(&positions);                    
                 }

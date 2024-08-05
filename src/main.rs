@@ -69,7 +69,7 @@ pub fn main() {
 
         ev_handler.handle_events(&frame_input.events, &mut camera, &context, &mut entities);
 
-        entities.filter_to_entities_mut(|e| e.has_tag(TAG_SELECTABLE)).iter_mut().for_each(|e| {
+        entities.filter_to_entities_mut(|e| e.has_tag(TAG_HAS_ANIMATION)).iter_mut().for_each(|e| {
             e.animate(frame_input.accumulated_time as f32);
         });
 

@@ -78,7 +78,7 @@ impl EventHandler {
                     }
 
                     if *kind == Key::X {
-                        // println!("{entities}");
+                        println!("{entities}");
                     }
                 }
                 Event::KeyRelease {
@@ -109,12 +109,7 @@ impl EventHandler {
                                 entity.has_tag(TAG_MAP)
                             }),
                         ) {
-                            dbg!(start_pick);
-                            //pick_mesh.set_transformation(Mat4::from_translation(pick));
                             self.dragging_state = MouseDraggingState::Dragging(start_pick);
-                        }
-                        else {
-                            println!("No pick");
                         }
                     }
                 }

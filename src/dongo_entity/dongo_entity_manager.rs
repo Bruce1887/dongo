@@ -1,10 +1,8 @@
-use ::core::panic;
-
 use crate::*;
 use three_d::*;
 
 pub struct DongoEntityManager {
-    e_vec: Vec<DongoEntity>,
+    pub(crate) e_vec: Vec<DongoEntity>,
     next_vacant_id: ENTITYID,
 }
 
@@ -25,8 +23,8 @@ impl DongoEntityManager {
 
         self.e_vec.iter().for_each(|e| {
             match e {
-                DongoEntity::Object(mmp, _) => objects.push(mmp.object()),
-                DongoEntity::Model(m, _) => m.iter().for_each(|part| objects.push(part)),
+                DongoEntity::Object(mmp, _,_) => objects.push(mmp.object()),
+                DongoEntity::Model(m, _,_) => m.iter().for_each(|part| objects.push(part)),
                 // DongoEntity::ColorModel(m) => m.iter().for_each(|part| objects.push(part)),
             }
         });   
@@ -47,8 +45,8 @@ impl DongoEntityManager {
 
         self.e_vec.iter().filter(|e| predicate(*e) ).for_each(|e| {
             match e {
-                DongoEntity::Object(mmp, _) => objects.push(mmp.object()),
-                DongoEntity::Model(m, _) => m.iter().for_each(|part| objects.push(part)),
+                DongoEntity::Object(mmp, _,_) => objects.push(mmp.object()),
+                DongoEntity::Model(m, _,_) => m.iter().for_each(|part| objects.push(part)),
                 // DongoEntity::ColorModel(m) => m.iter().for_each(|part| objects.push(part)),
             }
         });   
@@ -58,33 +56,45 @@ impl DongoEntityManager {
 
     pub fn add_entity(&mut self, mut entity: DongoEntity) -> ENTITYID {
         let id = self.next_vacant_id;
-        entity.metadata_mut().set_id_achtung(id);
+        entity.set_id_achtung(id);
         self.e_vec.push(entity);
         self.next_vacant_id += 1;
         id
     }
 
-    pub fn add_entity_from_gm<M: Material + 'static>(&mut self, gm: Gm<Mesh, M>, mut meta: DongoMetadata) -> ENTITYID {
+    pub fn add_entity_from_gm<M: Material + 'static>(&mut self, gm: Gm<Mesh, M>, meta: DongoMetadata) -> ENTITYID {
         let id = self.next_vacant_id;
-        meta.set_id_achtung(id);
-        self.add_entity(DongoEntity::Object(Box::new(gm), meta));
+        self.add_entity(DongoEntity::Object(Box::new(gm), meta,Some(id)));
         self.next_vacant_id += 1;
         id
     }
 
     pub fn get_entity_by_id(&self, id: u16) -> Option<&DongoEntity> {
-        self.e_vec.iter().find(|e| e.metadata().id() == Some(id))
+        self.e_vec.iter().find(|e| e.id() == Some(id))
     }
 
     pub fn get_entity_by_id_mut(&mut self, id: u16) -> Option<&mut DongoEntity> {
-        self.e_vec.iter_mut().find(|e| e.metadata().id() == Some(id))
+        self.e_vec.iter_mut().find(|e| e.id() == Some(id))
     }
 
     pub fn take_entity_by_id(&mut self, id: u16) -> Option<DongoEntity> {
-        self.e_vec.iter_mut().position(|e| e.metadata().id() == Some(id)).map(|i| self.e_vec.remove(i))
+        self.e_vec.iter_mut().position(|e| e.id() == Some(id)).map(|i| self.e_vec.remove(i))
     }
 
-    pub fn get_all_within_bounds(&self, start: Vec3, end: Vec3) -> Vec<&dyn Object> {
-        panic!()
+    pub fn get_all_within_bounds(&self, start: Vec3, end: Vec3) -> Vec<&DongoEntity> {
+        let inside = self.e_vec.iter().filter(|e| {
+            e.is_within_bounds(start, end)
+        });
+        inside.collect()
+
+        // let mut objects: Vec<&dyn Object> = Vec::new();
+        // inside.for_each(|e| {
+        //     match e {
+        //         DongoEntity::Object(mmp,_, _) => objects.push(mmp.object()),
+        //         DongoEntity::Model(m, _,_) => m.iter().for_each(|part| objects.push(part)),
+        //         // DongoEntity::ColorModel(m) => m.iter().for_each(|part| objects.push(part)),
+        //     }
+        // });
+        // objects
     }
 }

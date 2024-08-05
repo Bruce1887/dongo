@@ -11,7 +11,7 @@ pub const MAP_VERTEX_DISTANCE: f32 = 5.0;
 pub const MAP_PERLIN_NOISE_FACTOR: f64 = 3.0; // higher value equals more mountains and valleys
 
 // camera movement
-pub const CAMERA_MIN_HEIGHT: f32 = MAP_MIN_HEIGHT as f32 + 10.0;
+pub const CAMERA_MIN_HEIGHT: f32 = MAP_MIN_HEIGHT as f32 + 100.0;
 pub const CAMERA_MAX_HEIGHT: f32 = MAP_MAX_HEIGHT as f32 + 2000.0;
 pub const CAMERA_MOVE_SPEED: f32 = 2.0;
 pub const CAMERA_SHIFT_FACTOR: f32 = 8.0;
