@@ -16,8 +16,9 @@ impl DongoEntityManager {
     
     fn _get_entities(&self) -> &Vec<DongoEntity> {
         &self.e_vec
-    }
 
+    }
+    
     pub fn get_objects(&self) -> Vec<&dyn Object> {
         let mut objects: Vec<&dyn Object> = Vec::new();
 
@@ -25,6 +26,8 @@ impl DongoEntityManager {
             match e {
                 DongoEntity::Object(mmp, _,_) => objects.push(mmp.object()),
                 DongoEntity::Model(m, _,_) => m.iter().for_each(|part| objects.push(part)),
+                DongoEntity::Terrain(mmp,_ ,_ ,_ ) => objects.push(mmp.object()),
+                // _ => (),
                 // DongoEntity::ColorModel(m) => m.iter().for_each(|part| objects.push(part)),
             }
         });   
@@ -47,6 +50,8 @@ impl DongoEntityManager {
             match e {
                 DongoEntity::Object(mmp, _,_) => objects.push(mmp.object()),
                 DongoEntity::Model(m, _,_) => m.iter().for_each(|part| objects.push(part)),
+                DongoEntity::Terrain(mmp,_ ,_ ,_ ) => objects.push(mmp.object()),
+                //_ => (),
                 // DongoEntity::ColorModel(m) => m.iter().for_each(|part| objects.push(part)),
             }
         });   
@@ -82,7 +87,7 @@ impl DongoEntityManager {
     }
 
     pub fn get_all_within_bounds(&self, start: Vec3, end: Vec3) -> Vec<&DongoEntity> {
-        let inside = self.e_vec.iter().filter(|e| {
+        let inside = self.e_vec.iter().filter(|e| e.has_tag(TAG_SELECTABLE)).filter(|e| {
             e.is_within_bounds(start, end)
         });
         inside.collect()
@@ -96,5 +101,9 @@ impl DongoEntityManager {
         //     }
         // });
         // objects
+    }
+
+    pub fn get_map(&self) -> Option<&DongoEntity> {
+        self.e_vec.iter().find(|e| e.has_tag(TAG_MAP))
     }
 }

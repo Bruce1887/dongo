@@ -15,7 +15,7 @@ impl<M: Material> MeshMaterialProvider for Gm<Mesh, M> {
     fn geometry(&self) -> &dyn Geometry {
         self
     }
-
+    
     fn material(&self) -> &dyn Material {
         &self.material
     }
@@ -31,4 +31,5 @@ impl<M: Material> MeshMaterialProvider for Gm<Mesh, M> {
     fn mesh_mut(&mut self) -> &mut Mesh {
         &mut self.geometry
     }
+
 }

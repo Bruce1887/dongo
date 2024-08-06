@@ -1,6 +1,5 @@
 use common::*;
 use dongo::*;
-use map_generator::*;
 use three_d::*;
 
 pub fn main() {
@@ -29,13 +28,14 @@ pub fn main() {
 
     let mut entities = DongoEntityManager::new();    
     
-    let map_generator = MapGenerator::read_from_file(common::MAPFILE_PATH).unwrap();
-    let map_gm = map_generator.generate(&context);
-
-    let map_entity = DongoEntity::from_gm(map_gm, DongoMetadata::new(Some("The map metadata!"), vec![TAG_MAP]));
+    let terrain_data = TerrainData::new(MAP_SIZE, MAP_VERTEX_DISTANCE);
+    let terrain_meta = DongoTerrainMetadata::new(MAP_SEED, MAP_PERLIN_NOISE_FACTOR, MAP_MAX_HEIGHT, MAP_MIN_HEIGHT);    
+    let map_entity = terrain_data.create_terrain_entity(&context, terrain_meta, MAP_COLOR_MODE);
     entities.add_entity(map_entity);
-    
 
+    // let map_entity = entities.filter_to_entities_mut(|e| e.has_tag(TAG_MAP));
+    
+    
     let mut cube_trimesh = CpuMesh::cube();
     cube_trimesh.colors = Some(Vec::from([DONGOCOLOR_RED; 36]));
 
@@ -45,6 +45,7 @@ pub fn main() {
     );
     
     let mut cube_entity = DongoEntity::from_gm(cube_gm, DongoMetadata::new_empty());
+    cube_entity.set_transform(Mat4::from_scale(20.0));
     cube_entity.set_pos(vec3(-20.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
     entities.add_entity(cube_entity);
     

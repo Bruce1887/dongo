@@ -4,6 +4,7 @@ use three_d::*;
 pub enum DongoEntity{
     Object(Box<dyn MeshMaterialProvider>,DongoMetadata,Option<ENTITYID>),
     Model(Model<PhysicalMaterial>,DongoMetadata,Option<ENTITYID>), 
+    Terrain(Box<dyn MeshMaterialProvider>,DongoMetadata,Option<ENTITYID>, DongoTerrainMetadata),
     //ColorModel(Model<ColorMaterial>),
 }
 
@@ -36,16 +37,19 @@ impl DongoEntity {
         match self {
             DongoEntity::Object(_,_,id) => *id,
             DongoEntity::Model(_,_,id) => *id,
+            DongoEntity::Terrain(_,_,id,_) => *id,
         }
     
     }
 
     /// ACHTUNG! This function should be avoided and used carefully when necessary.
     /// It is up to the caller to ensure that the id is unique.
+    /// It should generally only be used when current id is None.
     pub fn set_id_achtung(&mut self, new_id: ENTITYID) {
         match self {
             DongoEntity::Object(_,_,current_id) => *current_id = Some(new_id),
             DongoEntity::Model(_,_,current_id) => *current_id = Some(new_id),
+            DongoEntity::Terrain(_,_,current_id,_) => *current_id = Some(new_id),
         }
     }
 
@@ -53,6 +57,7 @@ impl DongoEntity {
         match self {
             DongoEntity::Object(_, meta,_) => meta,
             DongoEntity::Model(_, meta,_) => meta,
+            DongoEntity::Terrain(_, meta,_, _ ) => meta,
         }
     }
     
@@ -60,6 +65,7 @@ impl DongoEntity {
         match self {
             DongoEntity::Object(_, meta,_) => meta,
             DongoEntity::Model(_, meta,_) => meta,
+            DongoEntity::Terrain(_, meta,_, _ ) => meta,
         }
     }
 
@@ -79,13 +85,16 @@ impl DongoEntity {
                 let (x, y, z) = (transform.w.x, transform.w.y, transform.w.z);
                 vec3(x, y, z)
             },
+            _ => panic!("pos() not implemented for this entity type"),
         }
     }
 
     pub fn set_pos(&mut self, pos: Vec3) {
         match self {
             DongoEntity::Object(mmp,_,_) => {
+                
                 let mut transform = mmp.mesh().transformation();
+
                 transform.w = vec4(pos.x, pos.y, pos.z, 1.0);
                 mmp.mesh_mut().set_transformation(transform);
             },
@@ -96,7 +105,7 @@ impl DongoEntity {
                     part.set_transformation(transform);
                 });
             },
-            
+            _ => panic!("set_pos() not implemented for this entity type"),
         }
     }
 
@@ -108,6 +117,7 @@ impl DongoEntity {
             DongoEntity::Model(model, _,_) => {
                 model.iter_mut().for_each(|part| part.set_transformation(transform));
             },
+            _ => panic!("set_transform() not implemented for this entity type"),
         }
     }
 
@@ -115,6 +125,7 @@ impl DongoEntity {
         match self {
             DongoEntity::Object(mmp,_,_) => mmp.mesh().transformation(),
             DongoEntity::Model(model,_,_) => model.first().unwrap().transformation(),
+            _ => panic!("transform() not implemented for this entity type"),
         }
     }
 
@@ -122,6 +133,7 @@ impl DongoEntity {
         match self {
             DongoEntity::Object(mmp,_,_) => mmp.mesh_mut().animate(delta_time),
             DongoEntity::Model(model,_,_) => model.iter_mut().for_each(|part| part.animate(delta_time)),
+            _ => panic!("animate() not implemented for this entity type"),
             
         }
     }
@@ -132,6 +144,16 @@ impl DongoEntity {
             && pos.x <= start.x.max(end.x)
             && start.y.min(end.y) <= pos.y
             && pos.y <= start.y.max(end.y)
+    }
+
+    pub fn get_height_at(&self, x: f32, y: f32) -> f32 {
+        match self {
+            DongoEntity::Terrain(_,_,_,dt_meta) => {
+
+                dt_meta.get_height_at(x as f64, y as f64) as f32
+            },
+            _ => panic!("get_height_at() not implemented for this entity type"),
+        }
     }
 
 }

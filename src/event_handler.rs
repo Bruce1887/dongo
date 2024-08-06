@@ -121,6 +121,7 @@ impl EventHandler {
                 } => {
                     if *button == MouseButton::Left {
                         if let MouseDraggingState::Dragging(start) = self.dragging_state {
+                            
                             if let Some(end_pick) = pick(
                                 context,
                                 &camera,
@@ -131,6 +132,11 @@ impl EventHandler {
                             ) {
                                 self.selector
                                     .select_in_bounds(entities, start, end_pick, context);
+                                
+                                let map = entities.get_map().unwrap();
+
+                                // TODO: i think the end_pick is not correct here
+                                dbg!(map.get_height_at(end_pick.x,end_pick.y));
                             }
                             self.selector.remove_selection_box(entities);
                             self.dragging_state = MouseDraggingState::NotDragging;
