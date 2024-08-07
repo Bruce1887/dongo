@@ -9,7 +9,7 @@ pub const MAP_COLOR_MODE: ColorMode = ColorMode::HeightMap;
 pub const MAP_MAX_HEIGHT: f64 = 300.0;
 pub const MAP_MIN_HEIGHT: f64 = 0.0;
 pub const MAP_VERTEX_DISTANCE: f32 = 5.0;
-pub const MAP_PERLIN_NOISE_FACTOR: f64 = 5.0; // higher value equals more mountains and valleys
+pub const MAP_PERLIN_NOISE_FACTOR: f64 = 1.0; // higher value equals more mountains and valleys
 
 // camera movement
 pub const CAMERA_MIN_HEIGHT: f32 = MAP_MIN_HEIGHT as f32 + 100.0;
@@ -20,7 +20,7 @@ pub const CAMERA_ROTATE_SPEED: f32 = 0.08;
 
 // camera initial values
 pub const CAM_START_POS: Vec3 = vec3(0.0, 0.0, (CAMERA_MAX_HEIGHT + CAMERA_MIN_HEIGHT) / 2.0);
-pub const CAM_START_TARGET: Vec3 = vec3(0.0, 2000.0, 0.0);
+pub const CAM_START_TARGET: Vec3 = vec3(0.0, 200.0, 0.0);
 pub const CAM_START_UP: Vec3 = vec3(0.0, 1.0, 0.0); // maybe always the same up?
 pub const CAM_START_FOV: Degrees = degrees(45.0);
 pub const CAM_START_Z_NEAR: f32 = 10.0; // TODO: set this to some better value

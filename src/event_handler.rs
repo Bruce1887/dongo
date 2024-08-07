@@ -132,14 +132,26 @@ impl EventHandler {
                             ) {
                                 self.selector
                                     .select_in_bounds(entities, start, end_pick, context);
-                                
-                                let map = entities.get_map().unwrap();
-
-                                // TODO: i think the end_pick is not correct here
-                                dbg!(map.get_height_at(end_pick.x,end_pick.y));
                             }
                             self.selector.remove_selection_box(entities);
                             self.dragging_state = MouseDraggingState::NotDragging;
+                        }
+                    }
+                    if * button == MouseButton::Right {
+                        if let Some(pick) = pick(
+                            context,
+                            &camera,
+                            *position,
+                            entities.filter_to_objects(|entity| {
+                                entity.has_tag(TAG_MAP)
+                            }),
+                        ) {
+                            let map = entities.get_map().unwrap();
+                            let height_at_pick = map.get_height_at(pick.x,pick.y);
+                            let mut tree_entity = DongoEntity::from_obj_file(context, "low-poly-pinetree", DongoMetadata::new_empty());
+                            tree_entity.set_transform(Mat4::from_scale(20.0));
+                            tree_entity.set_pos(vec3(pick.x, pick.y, height_at_pick));
+                            entities.add_entity(tree_entity);
                         }
                     }
                 }

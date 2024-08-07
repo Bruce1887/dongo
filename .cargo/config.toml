@@ -1,3 +1,4 @@
 [alias]
 cull = "run --bin test_cull"
 massage = "run --bin massage_data"
+perlin ="run --bin test_perlin"

@@ -28,13 +28,10 @@ pub fn main() {
 
     let mut entities = DongoEntityManager::new();    
     
-    let terrain_data = TerrainData::new(MAP_SIZE, MAP_VERTEX_DISTANCE);
-    let terrain_meta = DongoTerrainMetadata::new(MAP_SEED, MAP_PERLIN_NOISE_FACTOR, MAP_MAX_HEIGHT, MAP_MIN_HEIGHT);    
-    let map_entity = terrain_data.create_terrain_entity(&context, terrain_meta, MAP_COLOR_MODE);
-    entities.add_entity(map_entity);
-
-    // let map_entity = entities.filter_to_entities_mut(|e| e.has_tag(TAG_MAP));
-    
+    let terrain_builder = TerrainBuilder::new(MAP_SIZE, MAP_VERTEX_DISTANCE);
+    let terrain_meta = DongoTerrainMetadata::new(MAP_SEED, MAP_PERLIN_NOISE_FACTOR, MAP_MAX_HEIGHT, MAP_MIN_HEIGHT, &terrain_builder);    
+    let terrain_entity = terrain_builder.create_terrain_entity(&context, terrain_meta, MAP_COLOR_MODE);
+    entities.add_entity(terrain_entity);
     
     let mut cube_trimesh = CpuMesh::cube();
     cube_trimesh.colors = Some(Vec::from([DONGOCOLOR_RED; 36]));
@@ -75,7 +72,7 @@ pub fn main() {
         });
 
 
-        directional_light.generate_shadow_map(1024, entities.filter_to_objects(|e| e.has_tag(TAG_MAP)));
+        directional_light.generate_shadow_map(1024 * 4,entities.get_objects());
 
         let all_objects = entities.get_objects();
 
