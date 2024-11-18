@@ -30,9 +30,10 @@ pub(crate) fn zoom_camera(camera: &mut Camera, delta: &(f32, f32)) {
     let target_clone = camera.target().clone();
     let up_clone = camera.up().clone();
 
-    pos_clone.z -= delta.1; // delta.1 is positive when scrolling "up" (zooming in)
+    let zoom = CAMERA_ZOOM_SPEED * delta.1; // delta.1 is positive when scrolling "up" (zooming in)
+    pos_clone.z -= zoom; 
     pos_clone.z = pos_clone.z.clamp(CAMERA_MIN_HEIGHT, CAMERA_MAX_HEIGHT);
-
+    
     camera.set_view(pos_clone, target_clone, up_clone);
 }
 

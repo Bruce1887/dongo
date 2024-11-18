@@ -1,6 +1,9 @@
 use crate::*;
 use three_d::*;
 
+pub type PLAYERID = u8;
+pub type ENTITYID = u16;
+
 pub enum DongoEntity{
     Object(Box<dyn MeshMaterialProvider>,DongoMetadata,Option<ENTITYID>),
     Model(Model<PhysicalMaterial>,DongoMetadata,Option<ENTITYID>), 

@@ -40,13 +40,12 @@ pub fn main() {
         Mesh::new(&context, &cube_trimesh),
         PhysicalMaterial::default(),
     );
-    
-    let mut cube_entity = DongoEntity::from_gm(cube_gm, DongoMetadata::new_empty());
+    let mut cube_entity = DongoEntity::from_gm(cube_gm, DongoMetadata::new(Some("cube"), vec![TAG_SELECTABLE]));
     cube_entity.set_transform(Mat4::from_scale(20.0));
     cube_entity.set_pos(vec3(-20.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
     entities.add_entity(cube_entity);
     
-    let mut tree_entity = DongoEntity::from_obj_file(&context, "low-poly-pinetree", DongoMetadata::new_empty());
+    let mut tree_entity = DongoEntity::from_obj_file(&context, "low-poly-pinetree", DongoMetadata::new(Some("tree"), vec![TAG_SELECTABLE]));
     tree_entity.set_transform(Mat4::from_scale(8.0));
     tree_entity.set_pos(vec3(20.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
     entities.add_entity(tree_entity);
@@ -71,9 +70,8 @@ pub fn main() {
             e.animate(frame_input.accumulated_time as f32);
         });
 
-
-        directional_light.generate_shadow_map(1024 * 4,entities.get_objects());
-
+        directional_light.generate_shadow_map(2048,entities.filter_to_objects(|e| !e.has_tag(TAG_NO_LIGHT)));
+        
         let all_objects = entities.get_objects();
 
         // Get the screen render target to be able to render something on the screen

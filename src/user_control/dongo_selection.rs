@@ -51,7 +51,7 @@ impl DongoSelector {
 
             marker_gm.set_animation(|time| Mat4::from_angle_z(radians(time * 0.005)));
 
-            let mut marker_entity = DongoEntity::from_gm(marker_gm, DongoMetadata::new(Some("Selectionmarker metadata!"), vec![TAG_HAS_ANIMATION]));
+            let mut marker_entity = DongoEntity::from_gm(marker_gm, DongoMetadata::new(Some("Selectionmarker"), vec![TAG_HAS_ANIMATION,TAG_NO_LIGHT,TAG_SELECTION_MARKER]));
             marker_entity.set_pos(pos);
 
             let marker_id = entities.add_entity(marker_entity);
@@ -71,8 +71,7 @@ impl DongoSelector {
     }
 
     fn remove_markers(&mut self, entities: &mut DongoEntityManager) {
-        self.markers.iter().for_each(|id| {
-            println!("removing marker with id: {}", id);
+        self.markers.iter().for_each(|id| {            
             entities.take_entity_by_id(*id);
         });
         self.markers.clear();
@@ -101,7 +100,9 @@ impl DongoSelector {
 
         let inside = entities.get_all_within_bounds(start, end);
         inside.iter().for_each(|e| {
-            self.selected.push(e.id().expect("Tried to select an entity without an id!"));
+            if e.has_tag(TAG_SELECTABLE) {
+                self.selected.push(e.id().expect("Tried to select an entity without an id!"));
+            }
             // dbg!(e.id());
         });
 
@@ -145,7 +146,7 @@ impl DongoSelector {
                     ),
                 );
                 
-                let id = entities.add_entity_from_gm(selectionbox_gm, DongoMetadata::new_empty());
+                let id = entities.add_entity_from_gm(selectionbox_gm, DongoMetadata::new(Some("SelectionBox"), vec![TAG_SELECTION_BOX,TAG_NO_LIGHT]));
 
                 self.selection_box = Some(id);
             }
