@@ -13,5 +13,5 @@ three-d-asset = {version = "0.7", features = ["hdr", "gltf", "obj", "vol", "pcd"
 tri-mesh = "0.6.0"
 obj = "0.10.2"
 
-[profile.release]
-debug = true
+[features]
+debug = []

@@ -149,8 +149,9 @@ impl EventHandler {
                             let map = entities.get_map().unwrap();
                             let height_at_pick = map.get_height_at(pick.x,pick.y);
                             let mut tree_entity = DongoEntity::from_obj_file(context, "low-poly-pinetree", DongoMetadata::new_empty());
-                            tree_entity.set_transform(Mat4::from_scale(20.0));
-                            tree_entity.set_pos(vec3(pick.x, pick.y, height_at_pick));
+                            tree_entity.metadata_mut().tags.push(TAG_SELECTABLE);
+                            tree_entity.set_transform(Mat4::from_scale(50.0));
+                            tree_entity.set_pos(vec3(pick.x, pick.y, height_at_pick + 50.0));
                             entities.add_entity(tree_entity);
                         }
                     }

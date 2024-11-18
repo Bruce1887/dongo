@@ -1,5 +1,6 @@
 use common::*;
 use dongo::*;
+// use noise::Perlin;
 use three_d::*;
 
 pub fn main() {
@@ -26,16 +27,19 @@ pub fn main() {
         CAM_START_Z_FAR,
     );
 
+    // declare the entity manager. Like a big fat list of all entities
     let mut entities = DongoEntityManager::new();    
     
+    // ############ TERRAIN ############
     let terrain_builder = TerrainBuilder::new(MAP_SIZE, MAP_VERTEX_DISTANCE);
-    let terrain_meta = DongoTerrainMetadata::new(MAP_SEED, MAP_PERLIN_NOISE_FACTOR, MAP_MAX_HEIGHT, MAP_MIN_HEIGHT, &terrain_builder);    
+    // let terrain_meta = DongoTerrainMetadata::new(DongoTerrainSource::Perlin(Perlin::new(MAP_SEED), MAP_PERLIN_NOISE_FACTOR, MAP_MIN_HEIGHT, MAP_MAX_HEIGHT, MAP_PERLIN_LIMITER));    
+    let terrain_meta = DongoTerrainMetadata::new(DongoTerrainSource::Flat);
     let terrain_entity = terrain_builder.create_terrain_entity(&context, terrain_meta, MAP_COLOR_MODE);
     entities.add_entity(terrain_entity);
     
+    // ############ CUBE ############
     let mut cube_trimesh = CpuMesh::cube();
     cube_trimesh.colors = Some(Vec::from([DONGOCOLOR_RED; 36]));
-
     let cube_gm = Gm::new(
         Mesh::new(&context, &cube_trimesh),
         PhysicalMaterial::default(),
@@ -44,17 +48,19 @@ pub fn main() {
     cube_entity.set_transform(Mat4::from_scale(20.0));
     cube_entity.set_pos(vec3(-20.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
     entities.add_entity(cube_entity);
-    
+
+    // ############ TREE ############
     let mut tree_entity = DongoEntity::from_obj_file(&context, "low-poly-pinetree", DongoMetadata::new(Some("tree"), vec![TAG_SELECTABLE]));
     tree_entity.set_transform(Mat4::from_scale(8.0));
     tree_entity.set_pos(vec3(20.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
     entities.add_entity(tree_entity);
 
+    // ############ LIGHTS ############
     let mut directional_light =
         renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(2.0, 0.0, -1.0));
-
     let ambient_light = renderer::light::AmbientLight::new(&context, 0.05, Srgba::WHITE);
 
+    // ############ EVENT HANDLER ############
     let mut ev_handler = event_handler::EventHandler::new();
 
     // Start the main render loop
