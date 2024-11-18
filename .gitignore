@@ -1,0 +1,9 @@
+/target
+.*
+Cargo.lock
+/output
+*.svg
+
+# unignore
+!.cargo
+!.gitignore
