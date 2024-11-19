@@ -3,20 +3,40 @@ use dongo::*;
 // use noise::Perlin;
 use three_d::*;
 
+
+
 pub fn main() {
+    let event_loop = winit::event_loop::EventLoop::new();
+    
+    let winit_window = winit::window::WindowBuilder::new().build(&event_loop).unwrap();
+    
+    
+    winit_window.set_title("Dongo!");
+    winit_window.set_cursor_position(winit::dpi::PhysicalPosition::new(10.0, 10.0)).unwrap();
+    // winit_window.set_cursor_visible(false);    
+    
+    //winit_window.set_fullscreen(Some(winit::window::Fullscreen::Borderless(None)));
+    winit_window.set_cursor_position(winit::dpi::LogicalPosition::new(0.0, 0.0)).unwrap();
+
+    winit_window.set_cursor_grab(winit::window::CursorGrabMode::Locked)
+            .or_else(|_e| winit_window.set_cursor_grab(winit::window::CursorGrabMode::Confined))
+            .unwrap();
+        
+    let window = three_d::window::Window::from_winit_window(winit_window, event_loop, SurfaceSettings::default(),true).unwrap();    
+    
     // Create a window (a canvas on web)
-    let window = Window::new(WindowSettings {
-        title: "Dongo!".to_string(),
-        min_size: (10, 10),
-        max_size: None, // Some((1280, 720)),
-        borderless: true,
-        surface_settings: Default::default(),
-    })
-    .unwrap();
+    // let window = Window::new(WindowSettings {
+    //     title: "Dongo!".to_string(),
+    //     min_size: (10, 10),
+    //     max_size: None, // Some((1280, 720)),
+    //     borderless: true,
+    //     surface_settings: Default::default(),
+    // })
+    // .unwrap();
     
     // Get the graphics context from the window
     let context = window.gl();
-
+    
     let mut camera = Camera::new_perspective(
         window.viewport(),
         CAM_START_POS,
@@ -70,7 +90,7 @@ pub fn main() {
     {
         // Ensure the viewport matches the current window viewport which changes if the window is resized
         camera.set_viewport(frame_input.viewport);
-        ev_handler.handle_events(&frame_input.events, &mut camera, &context, &mut entities);
+        ev_handler.handle_events(&frame_input.events, &mut camera, &context, &mut entities,&winit_window);
 
         entities.filter_to_entities_mut(|e| e.has_tag(TAG_HAS_ANIMATION)).iter_mut().for_each(|e| {
             e.animate(frame_input.accumulated_time as f32);

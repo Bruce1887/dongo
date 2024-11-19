@@ -1,29 +1,36 @@
 use crate::common::*;
 use three_d::*;
 
-
-pub(crate) fn look_around(camera: &mut Camera,mouse_event: &mut Event) -> bool{
+pub(crate) fn look_around(winit_window: &winit::window::Window, camera: &mut Camera, mouse_event: &mut Event) -> bool {
     let mut change = false;
     match mouse_event {
-        Event::MouseMotion {
-            delta,
-            handled,
-            ..
-        } => {
+        Event::MouseMotion { delta, handled, .. } => {
             if !*handled {
+                
+                // disable mouse capture when moving camera and set mouse pos to not be at some edge of the window
+                winit_window.set_cursor_hittest(false);
+                winit_window.set_cursor_position(winit::dpi::PhysicalPosition::new(10.0, 10.0)).unwrap();
+
+                // actually look around
                 camera.yaw(-radians(delta.0 * std::f32::consts::PI / 1800.0));
-                            camera.pitch(-radians(delta.1 * std::f32::consts::PI / 1800.0));
-                            *handled = true;
-                            change = true;
+                camera.pitch(-radians(delta.1 * std::f32::consts::PI / 1800.0));
+                winit_window.set_cursor_hittest(true);
+                *handled = true;
+                change = true;
+
+                // reset cursor capture
+                winit_window.set_cursor_hittest(true);
             }
         }
-        _ => {assert!(false, "look_around called with non-mouse event");}
+        
+        _ => {
+            assert!(false, "look_around called with non-mouse event");
+        }
     }
     change
 }
 
 pub(crate) fn move_camera(camera: &mut Camera, direction: Vec3, speed: f32) {
-    println!("before move_camera: {:?}", camera.position());
     // Get the forward and right vector. throw away the Z component and normalize
     let mut forward = camera.view_direction();
     forward.z = 0.0;
@@ -36,17 +43,14 @@ pub(crate) fn move_camera(camera: &mut Camera, direction: Vec3, speed: f32) {
     let mut new_pos = camera.position().clone();
     new_pos += right * direction.x * speed;
     new_pos += forward * direction.y * speed;
-    dbg!(new_pos);
+
     // Update target based on new position and current target distance
     let target_distance = camera.target() - camera.position();
     let new_target = new_pos + target_distance;
-    dbg!(new_target);
 
     // Keep the up vector unchanged
     let up_clone = camera.up().clone();
-    dbg!(up_clone);
     camera.set_view(new_pos, new_target, up_clone);
-    println!("after move_camera: {:?}", camera.position());
 }
 
 pub(crate) fn zoom_camera(camera: &mut Camera, delta: &(f32, f32)) {
@@ -55,9 +59,9 @@ pub(crate) fn zoom_camera(camera: &mut Camera, delta: &(f32, f32)) {
     let up_clone = camera.up().clone();
 
     let zoom = CAMERA_ZOOM_SPEED * delta.1; // delta.1 is positive when scrolling "up" (zooming in)
-    pos_clone.z -= zoom; 
+    pos_clone.z -= zoom;
     pos_clone.z = pos_clone.z.clamp(CAMERA_MIN_HEIGHT, CAMERA_MAX_HEIGHT);
-    
+
     camera.set_view(pos_clone, target_clone, up_clone);
 }
 

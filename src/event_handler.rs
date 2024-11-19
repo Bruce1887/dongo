@@ -37,8 +37,9 @@ impl EventHandler {
         camera: &mut Camera,
         context: &Context,
         entities: &mut DongoEntityManager,
+        winit_window: &winit::window::Window,
     ) {
-        for mut ev in events {
+        for ev in events {
             match ev {
                 Event::ModifiersChange { modifiers } => {
                     // update modifier fields in struct
@@ -166,7 +167,7 @@ impl EventHandler {
                     modifiers: _,
                     handled: _,
                 } => {
-                    camera_controller::look_around(camera, &mut ev.clone());
+                    camera_controller::look_around(winit_window,camera, &mut ev.clone());
                     if let MouseDraggingState::Dragging(start) = self.dragging_state {
                         if let Some(end_pick) = pick(
                             context,
