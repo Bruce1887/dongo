@@ -10,6 +10,7 @@ pub enum ColorMode {
 pub const DONGOCOLOR_RED: Srgba = Srgba::new(255, 0, 0, 255);
 pub const DONGOCOLOR_GREEN: Srgba = Srgba::new(0, 255, 0, 255);
 pub const DONGOCOLOR_DARKGREEN: Srgba = Srgba::new(0, 155, 0, 255);
+pub const DONGOCOLOR_BROWN: Srgba = Srgba::new(110, 110, 0, 255);
 pub const DONGOCOLOR_BLUE: Srgba = Srgba::new(0, 0, 255, 255);
 pub const DONGOCOLOR_YELLOW: Srgba = Srgba::new(255, 255, 0, 255);
 pub const DONGOCOLOR_CYAN: Srgba = Srgba::new(0, 255, 255, 255);

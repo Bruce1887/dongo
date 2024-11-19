@@ -1,6 +1,5 @@
 use crate::*;
 use three_d::*;
-
 pub type PLAYERID = u8;
 pub type ENTITYID = u16;
 

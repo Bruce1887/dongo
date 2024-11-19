@@ -36,8 +36,7 @@ impl EventHandler {
         events: &Vec<Event>,
         camera: &mut Camera,
         context: &Context,
-        entities: &mut DongoEntityManager,
-        winit_window: &winit::window::Window,
+        entities: &mut DongoEntityManager        
     ) {
         for ev in events {
             match ev {
@@ -80,10 +79,7 @@ impl EventHandler {
 
                     if *kind == Key::X {
                         println!("{entities}");
-                    }
-                    if *kind == Key::C {
-                        dbg!(camera.position());
-                    }
+                    }                    
                 }
                 Event::KeyRelease {
                     kind: _,
@@ -92,12 +88,12 @@ impl EventHandler {
                 } => {
                     self.check_keys_down(ev);
                 }
-                // Event::MouseWheel {
-                //     delta,
-                //     position: _,
-                //     modifiers: _,
-                //     handled: _,
-                // } => crate::camera_controller::zoom_camera(camera, delta),
+                Event::MouseWheel {
+                    delta,
+                    position: _,
+                    modifiers: _,
+                    handled: _,
+                } => crate::camera_controller::zoom_camera(camera, delta),
                 Event::MousePress {
                     button,
                     position,
@@ -166,8 +162,7 @@ impl EventHandler {
                     position,
                     modifiers: _,
                     handled: _,
-                } => {
-                    camera_controller::look_around(winit_window,camera, &mut ev.clone());
+                } => {                    
                     if let MouseDraggingState::Dragging(start) = self.dragging_state {
                         if let Some(end_pick) = pick(
                             context,

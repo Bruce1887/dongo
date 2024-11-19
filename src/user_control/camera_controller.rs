@@ -1,33 +1,25 @@
 use crate::common::*;
 use three_d::*;
 
-pub(crate) fn look_around(winit_window: &winit::window::Window, camera: &mut Camera, mouse_event: &mut Event) -> bool {
-    let mut change = false;
-    match mouse_event {
-        Event::MouseMotion { delta, handled, .. } => {
-            if !*handled {
+pub fn look_around(window: &winit::window::Window, camera: &mut Camera, delta: &(f64,f64)) -> () {    
+                
                 
                 // disable mouse capture when moving camera and set mouse pos to not be at some edge of the window
-                winit_window.set_cursor_hittest(false);
-                winit_window.set_cursor_position(winit::dpi::PhysicalPosition::new(10.0, 10.0)).unwrap();
+                window.set_cursor_hittest(true).unwrap();
+                
+                // let window_size = winit_window.inner_size();
+                // let center_position = winit::dpi::PhysicalPosition::new(window_size.width as f64 / 2.0, window_size.height as f64 / 2.0);
+                // winit_window.set_cursor_position(center_position).unwrap();
+                
+                //dbg!(position);
 
                 // actually look around
-                camera.yaw(-radians(delta.0 * std::f32::consts::PI / 1800.0));
-                camera.pitch(-radians(delta.1 * std::f32::consts::PI / 1800.0));
-                winit_window.set_cursor_hittest(true);
-                *handled = true;
-                change = true;
+                camera.yaw(-radians((delta.0 as f32) * std::f32::consts::PI / 1800.0));
+                camera.pitch(-radians((delta.1 as f32) * std::f32::consts::PI / 1800.0));
+                window.set_cursor_hittest(true).unwrap();                                
 
                 // reset cursor capture
-                winit_window.set_cursor_hittest(true);
-            }
-        }
-        
-        _ => {
-            assert!(false, "look_around called with non-mouse event");
-        }
-    }
-    change
+                //winit_window.set_cursor_hittest(true).unwrap();                    
 }
 
 pub(crate) fn move_camera(camera: &mut Camera, direction: Vec3, speed: f32) {
@@ -66,7 +58,7 @@ pub(crate) fn zoom_camera(camera: &mut Camera, delta: &(f32, f32)) {
 }
 
 pub(crate) fn rotate_camera_around_target(camera: &mut Camera, rotation_direction: f32) {
-    assert!(rotation_direction == -1.0 || rotation_direction == 1.0);
+    debug_assert!(rotation_direction == -1.0 || rotation_direction == 1.0);
     let pos = camera.position().clone();
     let target = camera.target().clone();
 
