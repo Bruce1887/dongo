@@ -88,12 +88,12 @@ impl EventHandler {
                 } => {
                     self.check_keys_down(ev);
                 }
-                Event::MouseWheel {
-                    delta,
-                    position: _,
-                    modifiers: _,
-                    handled: _,
-                } => crate::camera_controller::zoom_camera(camera, delta),
+                // Event::MouseWheel {
+                //     delta,
+                //     position: _,
+                //     modifiers: _,
+                //     handled: _,
+                // } => crate::camera_controller::zoom_camera(camera, delta),
                 Event::MousePress {
                     button,
                     position,
@@ -214,7 +214,7 @@ impl EventHandler {
                 rotation_direction -= 1.0;
             }
             if rotation_direction != 0.0 {
-                crate::camera_controller::rotate_camera(camera, rotation_direction);
+                crate::camera_controller::rotate_camera_around_target(camera, rotation_direction);
             }
         }
     }

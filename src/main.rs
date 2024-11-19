@@ -46,7 +46,7 @@ pub fn main() {
     );
     let mut cube_entity = DongoEntity::from_gm(cube_gm, DongoMetadata::new(Some("cube"), vec![TAG_SELECTABLE]));
     cube_entity.set_transform(Mat4::from_scale(20.0));
-    cube_entity.set_pos(vec3(-20.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
+    cube_entity.set_pos(vec3(0.0, MAP_SIZE.0 as f32, 10.0));
     entities.add_entity(cube_entity);
 
     // ############ TREE ############
@@ -62,14 +62,13 @@ pub fn main() {
 
     // ############ EVENT HANDLER ############
     let mut ev_handler = event_handler::EventHandler::new();
-
+    
     // Start the main render loop
     window.render_loop(
         move |frame_input| // Begin a new frame with an updated frame input
     {
         // Ensure the viewport matches the current window viewport which changes if the window is resized
         camera.set_viewport(frame_input.viewport);
-
         ev_handler.handle_events(&frame_input.events, &mut camera, &context, &mut entities);
 
         entities.filter_to_entities_mut(|e| e.has_tag(TAG_HAS_ANIMATION)).iter_mut().for_each(|e| {

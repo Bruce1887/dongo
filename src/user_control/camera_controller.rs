@@ -37,7 +37,7 @@ pub(crate) fn zoom_camera(camera: &mut Camera, delta: &(f32, f32)) {
     camera.set_view(pos_clone, target_clone, up_clone);
 }
 
-pub(crate) fn rotate_camera(camera: &mut Camera, rotation_direction: f32) {
+pub(crate) fn rotate_camera_around_target(camera: &mut Camera, rotation_direction: f32) {
     assert!(rotation_direction == -1.0 || rotation_direction == 1.0);
     let pos = camera.position().clone();
     let target = camera.target().clone();
