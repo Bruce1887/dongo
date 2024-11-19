@@ -38,7 +38,7 @@ impl EventHandler {
         context: &Context,
         entities: &mut DongoEntityManager,
     ) {
-        for ev in events {
+        for mut ev in events {
             match ev {
                 Event::ModifiersChange { modifiers } => {
                     // update modifier fields in struct
@@ -79,6 +79,9 @@ impl EventHandler {
 
                     if *kind == Key::X {
                         println!("{entities}");
+                    }
+                    if *kind == Key::C {
+                        dbg!(camera.position());
                     }
                 }
                 Event::KeyRelease {
@@ -163,6 +166,7 @@ impl EventHandler {
                     modifiers: _,
                     handled: _,
                 } => {
+                    camera_controller::look_around(camera, &mut ev.clone());
                     if let MouseDraggingState::Dragging(start) = self.dragging_state {
                         if let Some(end_pick) = pick(
                             context,

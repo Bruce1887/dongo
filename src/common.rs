@@ -22,9 +22,9 @@ pub const CAMERA_ZOOM_SPEED: f32 = 8.0;
 pub const CAMERA_ROTATE_SPEED: f32 = 0.04;
 
 // camera initial values
-pub const CAM_START_POS: Vec3 = vec3(0.0, 0.0, (CAMERA_MAX_HEIGHT + CAMERA_MIN_HEIGHT) / 2.0);
-pub const CAM_START_TARGET: Vec3 = vec3(0.0, 200.0, 0.0);
-pub const CAM_START_UP: Vec3 = vec3(0.0, 1.0, 0.0); // maybe always the same up?
+pub const CAM_START_POS: Vec3 = vec3(0.0, 0.0, 10.0);
+pub const CAM_START_TARGET: Vec3 = vec3(0.0, MAP_SIZE.1 as f32, CAM_START_POS.z);
+pub const CAM_START_UP: Vec3 = vec3(0.0, 0.0, 1.0); // maybe always the same up?
 pub const CAM_START_FOV: Degrees = degrees(45.0);
 pub const CAM_START_Z_NEAR: f32 = 10.0; // TODO: set this to some better value
 pub const CAM_START_Z_FAR: f32 = CAMERA_MAX_HEIGHT * 2.0; // TODO: set this to some better value

@@ -19,10 +19,10 @@ impl std::fmt::Display for crate::DongoEntity {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             crate::DongoEntity::Object(_,meta,id) =>{
-                write!(f, "Object: {} {}",id.unwrap(), meta.desc())
+                write!(f, "Object: {} {} {:?}",id.unwrap(), meta.desc(),self.pos())
             }
             crate::DongoEntity::Model(_,meta,id) => {
-                write!(f, "Model: {} {}",id.unwrap(), meta.desc())
+                write!(f, "Model: {} {} {:?}",id.unwrap(), meta.desc(),self.pos())
             }
             crate::DongoEntity::Terrain(_,meta,id,_) => {
                 write!(f, "Terrain: {} {}",id.unwrap(), meta.desc())

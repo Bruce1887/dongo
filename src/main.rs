@@ -8,12 +8,12 @@ pub fn main() {
     let window = Window::new(WindowSettings {
         title: "Dongo!".to_string(),
         min_size: (10, 10),
-        max_size: Some((1280, 720)),
-        borderless: false,
+        max_size: None, // Some((1280, 720)),
+        borderless: true,
         surface_settings: Default::default(),
     })
     .unwrap();
-
+    
     // Get the graphics context from the window
     let context = window.gl();
 
@@ -45,9 +45,10 @@ pub fn main() {
         PhysicalMaterial::default(),
     );
     let mut cube_entity = DongoEntity::from_gm(cube_gm, DongoMetadata::new(Some("cube"), vec![TAG_SELECTABLE]));
-    cube_entity.set_transform(Mat4::from_scale(20.0));
-    cube_entity.set_pos(vec3(0.0, MAP_SIZE.0 as f32, 10.0));
+    cube_entity.set_transform(Mat4::from_scale(50.0));
+    cube_entity.set_pos(vec3(0.0, MAP_SIZE.0 as f32, 50.0));
     entities.add_entity(cube_entity);
+
 
     // ############ TREE ############
     let mut tree_entity = DongoEntity::from_obj_file(&context, "low-poly-pinetree", DongoMetadata::new(Some("tree"), vec![TAG_SELECTABLE]));
@@ -57,7 +58,7 @@ pub fn main() {
 
     // ############ LIGHTS ############
     let mut directional_light =
-        renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(2.0, 0.0, -1.0));
+        renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(1.0, 1.0, -1.0));
     let ambient_light = renderer::light::AmbientLight::new(&context, 0.05, Srgba::WHITE);
 
     // ############ EVENT HANDLER ############

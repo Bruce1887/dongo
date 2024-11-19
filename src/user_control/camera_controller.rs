@@ -1,7 +1,29 @@
 use crate::common::*;
 use three_d::*;
 
+
+pub(crate) fn look_around(camera: &mut Camera,mouse_event: &mut Event) -> bool{
+    let mut change = false;
+    match mouse_event {
+        Event::MouseMotion {
+            delta,
+            handled,
+            ..
+        } => {
+            if !*handled {
+                camera.yaw(-radians(delta.0 * std::f32::consts::PI / 1800.0));
+                            camera.pitch(-radians(delta.1 * std::f32::consts::PI / 1800.0));
+                            *handled = true;
+                            change = true;
+            }
+        }
+        _ => {assert!(false, "look_around called with non-mouse event");}
+    }
+    change
+}
+
 pub(crate) fn move_camera(camera: &mut Camera, direction: Vec3, speed: f32) {
+    println!("before move_camera: {:?}", camera.position());
     // Get the forward and right vector. throw away the Z component and normalize
     let mut forward = camera.view_direction();
     forward.z = 0.0;
@@ -14,15 +36,17 @@ pub(crate) fn move_camera(camera: &mut Camera, direction: Vec3, speed: f32) {
     let mut new_pos = camera.position().clone();
     new_pos += right * direction.x * speed;
     new_pos += forward * direction.y * speed;
-
+    dbg!(new_pos);
     // Update target based on new position and current target distance
     let target_distance = camera.target() - camera.position();
     let new_target = new_pos + target_distance;
+    dbg!(new_target);
 
     // Keep the up vector unchanged
     let up_clone = camera.up().clone();
-
+    dbg!(up_clone);
     camera.set_view(new_pos, new_target, up_clone);
+    println!("after move_camera: {:?}", camera.position());
 }
 
 pub(crate) fn zoom_camera(camera: &mut Camera, delta: &(f32, f32)) {
