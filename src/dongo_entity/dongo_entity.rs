@@ -10,7 +10,6 @@ pub enum DongoEntity{
     //ColorModel(Model<ColorMaterial>),
 }
 
-
 impl DongoEntity {
     pub fn from_obj_file(
         context: &Context,
@@ -152,7 +151,6 @@ impl DongoEntity {
     pub fn get_height_at(&self, x: f32, y: f32) -> f32 {
         match self {
             DongoEntity::Terrain(_,_,_,dt_meta) => {
-
                 dt_meta.get_height_at(x,y) 
             },
             _ => panic!("get_height_at() not implemented for this entity type"),

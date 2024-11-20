@@ -9,9 +9,9 @@ pub const MAPFILE_PATH: &str = "output/mapfile_1";
 pub const MAP_COLOR_MODE: ColorMode = ColorMode::HeightMap;
 pub const MAP_MAX_HEIGHT: f64 = 400.0;
 pub const MAP_MIN_HEIGHT: f64 = 0.0;
-pub const MAP_VERTEX_DISTANCE: f32 = 3.0;
+pub const MAP_VERTEX_DISTANCE: f32 = 8.0;
 // Map-Perlin noise
-pub const MAP_SEED: u32 = 942142;
+pub const MAP_SEED: u32 = 8551235;
 pub const MAP_PERLIN_NOISE_FACTOR: f64 = 1.5; // higher value equals more mountains and valleys
 pub const MAP_PERLIN_LIMITER: (usize,usize) = (MAP_SIZE.0+1,MAP_SIZE.1+1); // idk what this is
 

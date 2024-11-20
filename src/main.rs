@@ -41,33 +41,13 @@ pub fn main() {
     let mut entities = DongoEntityManager::new();
 
     // ############ TERRAIN ############    
-    #[inline]
-    fn terrain_filter(x: f32,y: f32) -> f32 {        
-        // center is at (0,0), because i explicitly designed it to be there
-
-        let distance_from_center = ((x).powf(2.0) + (y).powf(2.0)).sqrt();        
-
-        let map_x = MAP_VERTEX_DISTANCE * MAP_SIZE.0 as f32;
-        let map_y = MAP_VERTEX_DISTANCE * MAP_SIZE.1 as f32;        
-        let max_distance = (map_x.powf(2.0) + map_y.powf(2.0)).sqrt();        
-        let raw_cost = distance_from_center / max_distance;        
-        
-        // Ensure raw_cost is between 0 and 1
-        assert!(raw_cost >= 0.0 && raw_cost <= 1.0);
-        
-        let factor = (0.2, 4.0);
-        // Scale the raw cost to the desired range
-        let scaled_cost = raw_cost * (factor.1 - factor.0) + factor.0;        
-        
-        scaled_cost
-    }
     let terrain_source = FilteredPerlinTerrainSource {
         perlin: noise::Perlin::new(MAP_SEED),
         noise_factor: MAP_PERLIN_NOISE_FACTOR,
         map_max_height: MAP_MAX_HEIGHT,
         map_min_height: MAP_MIN_HEIGHT,
         limiter: MAP_PERLIN_LIMITER,
-        filter: Box::new(terrain_filter),
+        filter: Box::new(default_terrain_filter),
     };
     // let terrain_source = FlatTerrainSource { height: MAP_MIN_HEIGHT as f32 };
     let terrain_meta = DongoTerrainMetadata::new(terrain_source);
@@ -77,30 +57,28 @@ pub fn main() {
         terrain_builder.create_terrain_entity(&context, terrain_meta, MAP_COLOR_MODE);
     entities.add_entity(terrain_entity);
 
+
     // ############ CUBE ############
+    let cpu_mat = CpuMaterial::default();
+    let mut phys_mat = PhysicalMaterial::new(&context, &cpu_mat);
+    phys_mat.metallic = 2.0;
+
     let mut cube_trimesh = CpuMesh::cube();
     cube_trimesh.colors = Some(Vec::from([DONGOCOLOR_RED; 36]));
     let cube_gm = Gm::new(
         Mesh::new(&context, &cube_trimesh),
-        PhysicalMaterial::default(),
+        phys_mat,
     );
     let mut cube_entity = DongoEntity::from_gm(
         cube_gm,
         DongoMetadata::new(Some("cube"), vec![TAG_SELECTABLE]),
     );
-    cube_entity.set_transform(Mat4::from_scale(50.0));
-    cube_entity.set_pos(vec3(0.0, MAP_SIZE.0 as f32, 50.0));
+    cube_entity.set_transform(Mat4::from_scale(100.0));    
+    cube_entity.set_pos(vec3(0.0, 0.0, 200.0));
     entities.add_entity(cube_entity);
 
-    // ############ TREE ############
-    let mut tree_entity = DongoEntity::from_obj_file(
-        &context,
-        "low-poly-pinetree",
-        DongoMetadata::new(Some("tree"), vec![TAG_SELECTABLE]),
-    );
-    tree_entity.set_transform(Mat4::from_scale(8.0));
-    tree_entity.set_pos(vec3(20.0, 0.0, MAP_MAX_HEIGHT as f32 + 10.0));
-    entities.add_entity(tree_entity);
+
+
 
     // ############ LIGHTS ############
     let mut directional_light =
@@ -150,13 +128,13 @@ pub fn main() {
             event: device_event,
             ..
         } => match device_event {
-            winit::event::DeviceEvent::MouseMotion { delta } => {
+            wEvent::DeviceEvent::MouseMotion { delta } => {
                 camera_controller::look_around(&window, &mut camera, delta);
             }
-            winit::event::DeviceEvent::Key(input) => {
-                if input.virtual_keycode == Some(winit::event::VirtualKeyCode::C) {
+            wEvent::DeviceEvent::Key(input) => {
+                if input.virtual_keycode == Some(wEvent::VirtualKeyCode::C) {
                     window.set_cursor_visible(true);
-                } else if input.virtual_keycode == Some(winit::event::VirtualKeyCode::V) {
+                } else if input.virtual_keycode == Some(wEvent::VirtualKeyCode::V) {
                     window.set_cursor_visible(false);
                 }
             }

@@ -1,4 +1,5 @@
 use noise::{NoiseFn, Perlin};
+use crate::common::*;
 
 pub trait DongoTerrainSource {
     fn get_height_at(&self, x: f32, y: f32) -> f32;
@@ -53,7 +54,32 @@ pub struct FilteredPerlinTerrainSource {
     pub limiter: (usize,usize),
     pub filter: Box<dyn Fn(f32,f32) -> f32>,
 }
+/// Default terrain filter. 
+/// Creates mountains at the edges and plains at the center.
+#[inline]
+pub fn default_terrain_filter(x: f32,y: f32) -> f32 {        
+    let map_x = MAP_VERTEX_DISTANCE * MAP_SIZE.0 as f32;
+    let map_y = MAP_VERTEX_DISTANCE * MAP_SIZE.1 as f32;        
+        
+    // // this will add a big wall at the very edge of the map. 
+    // if x.abs() * 2.0 == map_x || y.abs() * 2.0 == map_y {
+    //     return 20.0;
+    // }
 
+    // center is always at (0,0), because i explicitly chose for it to be there
+    let distance_from_center = ((x).powf(2.0) + (y).powf(2.0)).sqrt();        
+    let max_distance = (map_x.powf(2.0) + map_y.powf(2.0)).sqrt();        
+    let raw_cost = distance_from_center / max_distance;        
+    
+    // Ensure raw_cost is between 0 and 1
+    debug_assert!(raw_cost >= 0.0 && raw_cost <= 1.0);
+    
+    let factor = (0.2, 4.0);
+    // Scale the raw cost to the desired range
+    let scaled_cost = raw_cost * (factor.1 - factor.0) + factor.0;        
+    
+    scaled_cost
+}
 impl DongoTerrainSource for FilteredPerlinTerrainSource {
     fn get_height_at(&self, x: f32, y: f32) -> f32 {        
             
