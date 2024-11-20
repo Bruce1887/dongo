@@ -1,12 +1,18 @@
 use dongo::data_massage_parlor::data_massage::*;
-const DATA_NAME: &str = "low-poly-pinetree";
+
 
 fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() < 2 {
+        eprintln!("Usage: {} <data_name>", args[0]);
+        std::process::exit(1);
+    }
+    let data_name = &args[1];
     println!("Massaging data...");
     
-    let data_to_massage_path = format!("assets/{}/{}.obj", DATA_NAME, DATA_NAME);
-    let massaged_data_path = format!("assets/{}/massaged_{}.obj", DATA_NAME, DATA_NAME);
-    println!("DATA_NAME {DATA_NAME}\n");
+    let data_to_massage_path = format!("assets/{}/{}.obj", data_name, data_name);
+    let massaged_data_path = format!("assets/{}/massaged_{}.obj", data_name, data_name);
+    println!("DATA_NAME {data_name}\n");
     
     println!("Centering vertices...");
     center_obj_vertices(
@@ -33,12 +39,12 @@ fn main() {
 
     println!("\nData massaged: {massaged_data_path}");
 
-    run();
+    run(&data_name);
 }
 
 use three_d::*;
 
-pub fn run() {
+pub fn run(data_name: &str) {
     let window = Window::new(WindowSettings {
         title: "massage!".to_string(),
         max_size: Some((1280, 720)),
@@ -61,10 +67,10 @@ pub fn run() {
     let ambient = AmbientLight::new(&context, 0.4, Srgba::WHITE);
     let directional = DirectionalLight::new(&context, 2.0, Srgba::WHITE, &vec3(-1.0, -1.0, -1.0));
     let directional_2 = DirectionalLight::new(&context, 0.1, Srgba::WHITE, &vec3(1.0, 1.0, 1.0));
-    let obj_path = format!("assets/{}/massaged_{}.obj", DATA_NAME, DATA_NAME);
+    let obj_path = format!("assets/{}/massaged_{}.obj", data_name, data_name);
     let mut loaded = three_d_asset::io::load(&[obj_path.as_str()]).unwrap();
 
-    let model = loaded.deserialize(format!("{}.obj", DATA_NAME)).unwrap();
+    let model = loaded.deserialize(format!("{}.obj", data_name)).unwrap();
 
     let model_mat = three_d::Model::<PhysicalMaterial>::new(&context, &model).unwrap();
 

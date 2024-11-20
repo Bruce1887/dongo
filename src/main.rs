@@ -78,13 +78,17 @@ pub fn main() {
     entities.add_entity(cube_entity);
 
 
-
+    // ############ LIZZO ############
+    let mut croc_entity = DongoEntity::from_obj_file(&context, "Gator_Float", DongoMetadata::new_empty());
+    croc_entity.set_transform(Mat4::from_scale(200.0));
+    croc_entity.set_pos(vec3(0.0, 500.0, 300.0));
+    entities.add_entity(croc_entity);
 
     // ############ LIGHTS ############
     let mut directional_light =
         renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(1.0, 1.0, -1.0));
     let ambient_light = renderer::light::AmbientLight::new(&context, 0.05, Srgba::WHITE);
-
+    
     // ############ EVENT HANDLER ############
     let mut ev_handler = event_handler::EventHandler::new();
 
