@@ -74,7 +74,7 @@ pub fn default_terrain_filter(x: f32,y: f32) -> f32 {
     // Ensure raw_cost is between 0 and 1
     debug_assert!(raw_cost >= 0.0 && raw_cost <= 1.0);
     
-    let factor = (0.2, 4.0);
+    let factor = (0.2, 8.0);
     // Scale the raw cost to the desired range
     let scaled_cost = raw_cost * (factor.1 - factor.0) + factor.0;        
     

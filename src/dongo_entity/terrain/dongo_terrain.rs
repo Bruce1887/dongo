@@ -125,7 +125,7 @@ impl TerrainBuilder {
                         self.colors.push(DONGOCOLOR_DARKGREEN);
                     } else {
                         // highest 25% of the height range
-                        self.colors.push(DONGOCOLOR_WHITE);
+                        self.colors.push(DONGOCOLOR_DARKWHITE);
                     }
                 }
             }
