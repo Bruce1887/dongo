@@ -18,8 +18,8 @@ pub const MAP_PERLIN_LIMITER: (usize,usize) = (MAP_SIZE.0+1,MAP_SIZE.1+1); // id
 // camera movement
 pub const CAMERA_MIN_HEIGHT: f32 = 100.0;
 pub const CAMERA_MAX_HEIGHT: f32 = MAP_MAX_HEIGHT as f32 + 2000.0;
-pub const CAMERA_MOVE_SPEED: f32 = 2.0;
-pub const CAMERA_SHIFT_FACTOR: f32 = 4.0;
+pub const CAMERA_MOVE_SPEED: f32 = 0.3;
+pub const CAMERA_SHIFT_FACTOR: f32 = 1.6;
 pub const CAMERA_ZOOM_SPEED: f32 = 8.0;
 pub const CAMERA_ROTATE_SPEED: f32 = 0.04;
 
@@ -30,6 +30,7 @@ pub const CAM_START_UP: Vec3 = vec3(0.0, 0.0, 1.0); // maybe always the same up?
 pub const CAM_START_FOV: Degrees = degrees(45.0);
 pub const CAM_START_Z_NEAR: f32 = 10.0; // TODO: set this to some better value
 pub const CAM_START_Z_FAR: f32 = 5000.0; // TODO: set this to some better value
+pub const CAMERA_HEIGHT_OFFSET: f32 = 50.0;
 
 // loading indicator stuff
 pub fn print_loading_indicator(_current: f32, _goal: f32) {    

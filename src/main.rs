@@ -40,7 +40,7 @@ pub fn main() {
     // declare the entity manager. Like a big fat list of all entities
     let mut entities = DongoEntityManager::new();
 
-    // ############ TERRAIN ############    
+    // ############ TERRAIN ############
     let terrain_source = FilteredPerlinTerrainSource {
         perlin: noise::Perlin::new(MAP_SEED),
         noise_factor: MAP_PERLIN_NOISE_FACTOR,
@@ -55,8 +55,7 @@ pub fn main() {
     // let terrain_meta = DongoTerrainMetadata::new(DongoTerrainSource::Flat);
     let terrain_entity =
         terrain_builder.create_terrain_entity(&context, terrain_meta, MAP_COLOR_MODE);
-    entities.add_entity(terrain_entity);
-
+    let terrain_id = entities.add_entity(terrain_entity);
 
     // ############ CUBE ############
     let cpu_mat = CpuMaterial::default();
@@ -65,43 +64,41 @@ pub fn main() {
 
     let mut cube_trimesh = CpuMesh::cube();
     cube_trimesh.colors = Some(Vec::from([DONGOCOLOR_RED; 36]));
-    let cube_gm = Gm::new(
-        Mesh::new(&context, &cube_trimesh),
-        phys_mat,
-    );
+    let cube_gm = Gm::new(Mesh::new(&context, &cube_trimesh), phys_mat);
     let mut cube_entity = DongoEntity::from_gm(
         cube_gm,
         DongoMetadata::new(Some("cube"), vec![TAG_SELECTABLE]),
     );
-    cube_entity.set_transform(Mat4::from_scale(100.0));    
+    cube_entity.set_transform(Mat4::from_scale(100.0));
     cube_entity.set_pos(vec3(0.0, 0.0, 200.0));
     entities.add_entity(cube_entity);
 
-
     // ############ LIZZO ############
-    let mut croc_entity = DongoEntity::from_obj_file(&context, "Gator_Float", DongoMetadata::new_empty());
+    let mut croc_entity =
+        DongoEntity::from_obj_file(&context, "Gator_Float", DongoMetadata::new_empty());
     croc_entity.set_transform(Mat4::from_scale(300.0));
     croc_entity.set_pos(vec3(0.0, 500.0, 600.0));
     entities.add_entity(croc_entity);
 
     // ############ LIGHTS ############
     let mut directional_light =
-        renderer::light::DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(1.0, 1.0, -1.0));
+        renderer::light::DirectionalLight::new(&context, 0.7, Srgba::WHITE, &vec3(1.0, 1.0, -1.0));
     let ambient_light = renderer::light::AmbientLight::new(&context, 0.3, Srgba::WHITE);
-    
+
     // ############ EVENT HANDLER ############
     let mut ev_handler = event_handler::EventHandler::new();
 
+    let mut change: bool = true;
     event_loop.run(move |event, _, control_flow| match &event {
         wEvent::Event::MainEventsCleared => {
             window.request_redraw();
         }
-        wEvent::Event::RedrawRequested(_) => {
+        wEvent::Event::RedrawRequested(_) => {            
             context.make_current().unwrap();
             let frame_input = frame_input_generator.generate(&context);
 
             camera.set_viewport(frame_input.viewport);
-            ev_handler.handle_events(&frame_input.events, &mut camera, &context, &mut entities);
+            change |= ev_handler.handle_events(&frame_input.events, &mut camera, &context, &mut entities, terrain_id);
 
             entities
                 .filter_to_entities_mut(|e| e.has_tag(TAG_HAS_ANIMATION))
@@ -111,22 +108,25 @@ pub fn main() {
                 });
 
             directional_light.generate_shadow_map(
-                2048,
+                128,
                 entities.filter_to_objects(|e| !e.has_tag(TAG_NO_LIGHT)),
             );
 
             let all_objects = entities.get_objects();
 
-            // Get the screen render target to be able to render something on the screen
-            frame_input
-                .screen()
-                // Clear the color and depth of the screen render target
-                .clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 1.0, 1.0))
-                .render(&camera, all_objects, &[&directional_light, &ambient_light]);
+            if change {
+                // Get the screen render target to be able to render something on the screen
+                frame_input
+                    .screen()
+                    // Clear the color and depth of the screen render target
+                    .clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 1.0, 1.0))
+                    .render(&camera, all_objects, &[&directional_light, &ambient_light]);
 
-            context.swap_buffers().unwrap();
-            control_flow.set_poll();
-            window.request_redraw();
+                context.swap_buffers().unwrap();
+                control_flow.set_poll();
+                window.request_redraw();
+            }
+            change = false;
         }
         wEvent::Event::DeviceEvent {
             event: device_event,
@@ -134,12 +134,15 @@ pub fn main() {
         } => match device_event {
             wEvent::DeviceEvent::MouseMotion { delta } => {
                 camera_controller::look_around(&window, &mut camera, delta);
+                change = true;
             }
             wEvent::DeviceEvent::Key(input) => {
                 if input.virtual_keycode == Some(wEvent::VirtualKeyCode::C) {
-                    window.set_cursor_visible(true);
+                    window.set_cursor_visible(true);         
+                    change = true;           
                 } else if input.virtual_keycode == Some(wEvent::VirtualKeyCode::V) {
                     window.set_cursor_visible(false);
+                    change = true;
                 }
             }
             _ => {}

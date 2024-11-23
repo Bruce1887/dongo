@@ -1,4 +1,4 @@
-use crate::common::*;
+use crate::{common::*, DongoEntity};
 use three_d::*;
 
 pub fn look_around(window: &winit::window::Window, camera: &mut Camera, delta: &(f64,f64)) -> () {    
@@ -22,7 +22,10 @@ pub fn look_around(window: &winit::window::Window, camera: &mut Camera, delta: &
                 //winit_window.set_cursor_hittest(true).unwrap();                    
 }
 
-pub(crate) fn move_camera(camera: &mut Camera, direction: Vec3, speed: f32) {
+pub(crate) fn move_camera(camera: &mut Camera, direction: Vec3, speed: f32, terrain: &DongoEntity) -> bool {
+    
+    if direction.x == 0.0 && direction.y == 0.0  {return false;}
+    
     // Get the forward and right vector. throw away the Z component and normalize
     let mut forward = camera.view_direction();
     forward.z = 0.0;
@@ -35,7 +38,7 @@ pub(crate) fn move_camera(camera: &mut Camera, direction: Vec3, speed: f32) {
     let mut new_pos = camera.position().clone();
     new_pos += right * direction.x * speed;
     new_pos += forward * direction.y * speed;
-
+    new_pos.z = terrain.get_height_at(new_pos.x, new_pos.y) + CAMERA_HEIGHT_OFFSET;
     // Update target based on new position and current target distance
     let target_distance = camera.target() - camera.position();
     let new_target = new_pos + target_distance;
@@ -43,6 +46,8 @@ pub(crate) fn move_camera(camera: &mut Camera, direction: Vec3, speed: f32) {
     // Keep the up vector unchanged
     let up_clone = camera.up().clone();
     camera.set_view(new_pos, new_target, up_clone);
+
+    true
 }
 
 pub(crate) fn zoom_camera(camera: &mut Camera, delta: &(f32, f32)) {

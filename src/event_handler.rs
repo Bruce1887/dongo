@@ -10,12 +10,12 @@ pub struct EventHandler {
     ctrl_down: bool,
     alt_down: bool,
     // cmd_down: bool, // command is the ctrl key on windows and linux
-    dragging_state: MouseDraggingState,
-    selector: DongoSelector,
+    _dragging_state: MouseDraggingState,
+    _selector: DongoSelector,
 }
 
 enum MouseDraggingState {
-    Dragging(Vec3),
+    _Dragging(Vec3),
     NotDragging,
 }
 impl Default for MouseDraggingState {
@@ -35,9 +35,11 @@ impl EventHandler {
         &mut self,
         events: &Vec<Event>,
         camera: &mut Camera,
-        context: &Context,
-        entities: &mut DongoEntityManager        
-    ) {
+        _context: &Context,
+        _entities: &mut DongoEntityManager,
+        terrain_id: ENTITYID,
+    ) -> bool{
+        let mut change = false;
         for ev in events {
             match ev {
                 Event::ModifiersChange { modifiers } => {
@@ -59,26 +61,19 @@ impl EventHandler {
                     }
 
                     if *kind == Key::ArrowUp {
-                        crate::camera_controller::zoom_camera(camera, &(28.0, 28.0))
+                        crate::camera_controller::zoom_camera(camera, &(28.0, 28.0));
+                        change = true;
                     }
 
                     if *kind == Key::ArrowDown {
-                        crate::camera_controller::zoom_camera(camera, &(-28.0, -28.0))
+                        crate::camera_controller::zoom_camera(camera, &(-28.0, -28.0));
+                        change = true;
                     }
 
                     if *kind == Key::Num0 {
                         // reset camera position and stuff. for debug
                         camera.set_view(CAM_START_POS, CAM_START_TARGET, CAM_START_UP);
-                    }
-
-                    if *kind == Key::Z {
-                        let selected = self.selector.get_selected();
-                        dbg!(selected);
-                        self.selector.clear_selection(entities);
-                    }
-
-                    if *kind == Key::X {
-                        println!("{entities}");
+                        change = true;
                     }                    
                 }
                 Event::KeyRelease {
@@ -93,8 +88,12 @@ impl EventHandler {
                     position: _,
                     modifiers: _,
                     handled: _,
-                } => crate::camera_controller::zoom_camera(camera, delta),
-                Event::MousePress {
+                } => {
+                    crate::camera_controller::zoom_camera(camera, delta);
+                    change = true;
+                }
+                /* 
+                    Event::MousePress {
                     button,
                     position,
                     modifiers: _,
@@ -135,6 +134,7 @@ impl EventHandler {
                             }
                             self.selector.remove_selection_box(entities);
                             self.dragging_state = MouseDraggingState::NotDragging;
+                            change = true;
                         }
                     }
                     if * button == MouseButton::Right {
@@ -153,6 +153,7 @@ impl EventHandler {
                             tree_entity.set_transform(Mat4::from_scale(50.0));
                             tree_entity.set_pos(vec3(pick.x, pick.y, height_at_pick + 50.0));
                             entities.add_entity(tree_entity);
+                            change = true;
                         }
                     }
                 }
@@ -173,14 +174,16 @@ impl EventHandler {
                             }),
                         ) {
                             self.selector
-                                .resize_selection(entities, start, end_pick, context)
+                                .resize_selection(entities, start, end_pick, context);
+                            change = true;
                         }
                     }
                 }
+                */
                 _ => (),
             }
         }
-
+        
         // check if any of the wasd keys are down, if so move the camera
         if self.wasd_down.0 || self.wasd_down.1 || self.wasd_down.2 || self.wasd_down.3 {
             // I think it is good practice if these are set in order
@@ -202,8 +205,8 @@ impl EventHandler {
             } else {
                 CAMERA_MOVE_SPEED
             };
-
-            move_camera(camera, direction, speed);
+            
+            change |= move_camera(camera, direction, speed, _entities.get_entity_by_id(terrain_id).unwrap());
         }
         if self.qe_down.0 || self.qe_down.1 {
             let mut rotation_direction = 0.0;
@@ -217,6 +220,7 @@ impl EventHandler {
                 crate::camera_controller::rotate_camera_around_target(camera, rotation_direction);
             }
         }
+        change
     }
 
     fn check_keys_down(&mut self, ev: &Event) {
