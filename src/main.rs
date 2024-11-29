@@ -41,18 +41,18 @@ pub fn main() {
     let mut entities = DongoEntityManager::new();
 
     // ############ TERRAIN ############
-    let terrain_source = FilteredPerlinTerrainSource {
-        perlin: noise::Perlin::new(MAP_SEED),
-        noise_factor: MAP_PERLIN_NOISE_FACTOR,
-        map_max_height: MAP_MAX_HEIGHT,
-        map_min_height: MAP_MIN_HEIGHT,
-        limiter: MAP_PERLIN_LIMITER,
-        filter: Box::new(default_terrain_filter),
-    };
-    // let terrain_source = FlatTerrainSource { height: MAP_MIN_HEIGHT as f32 };
+    // let terrain_source = FilteredPerlinTerrainSource {
+    //     perlin: noise::Perlin::new(MAP_SEED),
+    //     noise_factor: MAP_PERLIN_NOISE_FACTOR,
+    //     map_max_height: MAP_MAX_HEIGHT,
+    //     map_min_height: MAP_MIN_HEIGHT,
+    //     limiter: MAP_PERLIN_LIMITER,
+    //     filter: Box::new(default_terrain_filter),
+    // };
+    let terrain_source = FlatTerrainSource { height: MAP_MIN_HEIGHT as f32 };
+
     let terrain_meta = DongoTerrainMetadata::new(terrain_source);
-    let terrain_builder = TerrainBuilder::new(MAP_SIZE, MAP_VERTEX_DISTANCE);
-    // let terrain_meta = DongoTerrainMetadata::new(DongoTerrainSource::Flat);
+    let terrain_builder = TerrainBuilder::new(MAP_SIZE, MAP_VERTEX_DISTANCE);        
     let terrain_entity =
         terrain_builder.create_terrain_entity(&context, terrain_meta, MAP_COLOR_MODE);
     let terrain_id = entities.add_entity(terrain_entity);
@@ -69,16 +69,74 @@ pub fn main() {
         cube_gm,
         DongoMetadata::new(Some("cube"), vec![TAG_SELECTABLE]),
     );
-    cube_entity.set_transform(Mat4::from_scale(100.0));
+    cube_entity.set_transform(Mat4::from_scale(50.0));
     cube_entity.set_pos(vec3(0.0, 0.0, 200.0));
     entities.add_entity(cube_entity);
 
     // ############ LIZZO ############
-    let mut croc_entity =
-        DongoEntity::from_obj_file(&context, "Gator_Float", DongoMetadata::new_empty());
-    croc_entity.set_transform(Mat4::from_scale(300.0));
+    // let mut croc_entity =
+    //     DongoEntity::from_obj_file(&context, "Gator_Float", DongoMetadata::new_empty());
+
+    let mut croc_entity = DongoEntity::from_gm(
+        Gm::new(
+            Mesh::new(&context, &cube_trimesh),
+            PhysicalMaterial::new(&context, &cpu_mat),
+        ),
+        DongoMetadata::new_empty(),
+    );
+    croc_entity.set_transform(Mat4::from_scale(100.0));
     croc_entity.set_pos(vec3(0.0, 500.0, 600.0));
-    entities.add_entity(croc_entity);
+    let croc_id = entities.add_entity(croc_entity);
+
+
+    let move_lizzo = |croc_id: ENTITYID,
+                      terrain_id: ENTITYID,
+                      entities: &mut DongoEntityManager,
+                      camera: &Camera|
+     -> bool {
+        let terrain = entities.get_entity_by_id(terrain_id).unwrap();
+
+        let croc_pos = entities.get_entity_by_id(croc_id).unwrap().pos().clone();
+        let height = terrain.get_height_at(croc_pos.x, croc_pos.y);
+        let direction = camera.position() - croc_pos;
+
+        let mut new_pos = croc_pos + direction.normalize() * 0.5;
+        new_pos.z = height + 300.0;
+
+        let croc = entities.get_entity_by_id_mut(croc_id).unwrap();        
+        
+        let angle_to_camera = direction.y.atan2(direction.x); // Angle in radians
+
+        // Extract the scale from the current transformation matrix
+        let current_transform = croc.transform();
+
+        // Add the scale to the transformation matrix
+        let scale = Vector3::new(
+            current_transform.x.x.abs(), // Scale on X-axis
+            current_transform.y.y.abs(), // Scale on Y-axis
+            current_transform.z.z.abs(), // Scale on Z-axis
+        );
+        let mut new_transform = Matrix4::<f32>::identity();        
+
+        
+        
+        // ROTATION
+        // new_transform =
+        //     new_transform * Matrix4::from_angle_y(Rad(angle_to_camera));    
+
+        // TRANSLATION
+        new_transform = new_transform * Matrix4::from_translation(new_pos.into());        
+        
+        // SCALING
+        new_transform = new_transform * Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z);
+        
+
+        dbg!(new_transform);
+        // Set the new transformation matrix
+        croc.set_transform(new_transform);
+                
+        true
+    };
 
     // ############ LIGHTS ############
     let mut directional_light =
@@ -93,12 +151,18 @@ pub fn main() {
         wEvent::Event::MainEventsCleared => {
             window.request_redraw();
         }
-        wEvent::Event::RedrawRequested(_) => {            
+        wEvent::Event::RedrawRequested(_) => {
             context.make_current().unwrap();
             let frame_input = frame_input_generator.generate(&context);
 
             camera.set_viewport(frame_input.viewport);
-            change |= ev_handler.handle_events(&frame_input.events, &mut camera, &context, &mut entities, terrain_id);
+            change |= ev_handler.handle_events(
+                &frame_input.events,
+                &mut camera,
+                &context,
+                &mut entities,
+                terrain_id,
+            );
 
             entities
                 .filter_to_entities_mut(|e| e.has_tag(TAG_HAS_ANIMATION))
@@ -108,12 +172,13 @@ pub fn main() {
                 });
 
             directional_light.generate_shadow_map(
-                128,
+                SHAHDOW_TEXTURE_SIZE,
                 entities.filter_to_objects(|e| !e.has_tag(TAG_NO_LIGHT)),
             );
 
-            let all_objects = entities.get_objects();
+            change |= move_lizzo(croc_id, terrain_id, &mut entities, &camera);
 
+            let all_objects = entities.get_objects();
             if change {
                 // Get the screen render target to be able to render something on the screen
                 frame_input
@@ -138,8 +203,8 @@ pub fn main() {
             }
             wEvent::DeviceEvent::Key(input) => {
                 if input.virtual_keycode == Some(wEvent::VirtualKeyCode::C) {
-                    window.set_cursor_visible(true);         
-                    change = true;           
+                    window.set_cursor_visible(true);
+                    change = true;
                 } else if input.virtual_keycode == Some(wEvent::VirtualKeyCode::V) {
                     window.set_cursor_visible(false);
                     change = true;

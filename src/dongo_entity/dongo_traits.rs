@@ -7,7 +7,7 @@ pub trait MeshMaterialProvider {
     fn material(&self) -> &dyn Material;
     fn object(&self) -> &dyn Object;
     fn mesh(&self) -> &Mesh;
-    fn mesh_mut(&mut self) -> &mut Mesh;
+    fn mesh_mut(&mut self) -> &mut Mesh;    
 }
 
 // perhaps i should change the dyn stuff to generics, but i dont know how to do that yet :)

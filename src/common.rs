@@ -16,21 +16,24 @@ pub const MAP_PERLIN_NOISE_FACTOR: f64 = 1.5; // higher value equals more mounta
 pub const MAP_PERLIN_LIMITER: (usize,usize) = (MAP_SIZE.0+1,MAP_SIZE.1+1); // idk what this is
 
 // camera movement
-pub const CAMERA_MIN_HEIGHT: f32 = 100.0;
+pub const CAMERA_MIN_HEIGHT: f32 = MAP_MIN_HEIGHT as f32 + CAMERA_HEIGHT_OFFSET;
 pub const CAMERA_MAX_HEIGHT: f32 = MAP_MAX_HEIGHT as f32 + 2000.0;
 pub const CAMERA_MOVE_SPEED: f32 = 0.3;
-pub const CAMERA_SHIFT_FACTOR: f32 = 1.6;
+pub const CAMERA_SHIFT_FACTOR: f32 = 15.0; // 1.6;
 pub const CAMERA_ZOOM_SPEED: f32 = 8.0;
 pub const CAMERA_ROTATE_SPEED: f32 = 0.04;
 
 // camera initial values
-pub const CAM_START_POS: Vec3 = vec3(0.0, 0.0, 10.0);
+pub const CAM_START_POS: Vec3 = vec3(0.0, 0.0, MAP_MIN_HEIGHT as f32 + CAMERA_HEIGHT_OFFSET);
 pub const CAM_START_TARGET: Vec3 = vec3(0.0, MAP_SIZE.1 as f32, CAM_START_POS.z);
 pub const CAM_START_UP: Vec3 = vec3(0.0, 0.0, 1.0); // maybe always the same up?
 pub const CAM_START_FOV: Degrees = degrees(45.0);
 pub const CAM_START_Z_NEAR: f32 = 10.0; // TODO: set this to some better value
 pub const CAM_START_Z_FAR: f32 = 5000.0; // TODO: set this to some better value
-pub const CAMERA_HEIGHT_OFFSET: f32 = 50.0;
+pub const CAMERA_HEIGHT_OFFSET: f32 = 50.0; // how high the camera is above the terrain
+
+// other
+pub const SHAHDOW_TEXTURE_SIZE: u32 = 512;
 
 // loading indicator stuff
 pub fn print_loading_indicator(_current: f32, _goal: f32) {    

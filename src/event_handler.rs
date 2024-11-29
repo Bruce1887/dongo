@@ -10,12 +10,12 @@ pub struct EventHandler {
     ctrl_down: bool,
     alt_down: bool,
     // cmd_down: bool, // command is the ctrl key on windows and linux
-    _dragging_state: MouseDraggingState,
-    _selector: DongoSelector,
+    dragging_state: MouseDraggingState,
+    selector: DongoSelector,
 }
 
 enum MouseDraggingState {
-    _Dragging(Vec3),
+    Dragging(Vec3),
     NotDragging,
 }
 impl Default for MouseDraggingState {
@@ -35,8 +35,8 @@ impl EventHandler {
         &mut self,
         events: &Vec<Event>,
         camera: &mut Camera,
-        _context: &Context,
-        _entities: &mut DongoEntityManager,
+        context: &Context,
+        entities: &mut DongoEntityManager,
         terrain_id: ENTITYID,
     ) -> bool{
         let mut change = false;
@@ -56,7 +56,6 @@ impl EventHandler {
                     self.check_keys_down(ev);
 
                     if *kind == Key::W && modifiers.ctrl {
-                        println!("Ctrl + W pressed. Exiting application...");
                         std::process::exit(0);
                     }
 
@@ -92,7 +91,7 @@ impl EventHandler {
                     crate::camera_controller::zoom_camera(camera, delta);
                     change = true;
                 }
-                /* 
+                 
                     Event::MousePress {
                     button,
                     position,
@@ -148,11 +147,19 @@ impl EventHandler {
                         ) {
                             let map = entities.get_map().unwrap();
                             let height_at_pick = map.get_height_at(pick.x,pick.y);
+                            /*
                             let mut tree_entity = DongoEntity::from_obj_file(context, "low-poly-pinetree", DongoMetadata::new_empty());
                             tree_entity.metadata_mut().tags.push(TAG_SELECTABLE);
                             tree_entity.set_transform(Mat4::from_scale(50.0));
                             tree_entity.set_pos(vec3(pick.x, pick.y, height_at_pick + 50.0));
                             entities.add_entity(tree_entity);
+                            */
+                            let cube_gm = Gm::new(Mesh::new(&context, &CpuMesh::cube()), PhysicalMaterial::default());
+                            let mut cube_entity = DongoEntity::from_gm(cube_gm, DongoMetadata::new(Some("cube"), vec![]));
+                            cube_entity.set_transform(Mat4::from_scale(100.0));
+                            cube_entity.set_pos(vec3(pick.x, pick.y, height_at_pick + 50.0));
+                            entities.add_entity(cube_entity);
+                            
                             change = true;
                         }
                     }
@@ -179,7 +186,7 @@ impl EventHandler {
                         }
                     }
                 }
-                */
+                
                 _ => (),
             }
         }
@@ -206,7 +213,7 @@ impl EventHandler {
                 CAMERA_MOVE_SPEED
             };
             
-            change |= move_camera(camera, direction, speed, _entities.get_entity_by_id(terrain_id).unwrap());
+            change |= move_camera(camera, direction, speed, entities.get_entity_by_id(terrain_id).unwrap());
         }
         if self.qe_down.0 || self.qe_down.1 {
             let mut rotation_direction = 0.0;

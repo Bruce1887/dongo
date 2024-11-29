@@ -4,6 +4,7 @@ use three_d::*;
 pub struct DongoEntityManager {
     pub(crate) e_vec: Vec<DongoEntity>,
     next_vacant_id: ENTITYID,
+    has_changes: bool,
 }
 
 impl DongoEntityManager {
@@ -11,12 +12,17 @@ impl DongoEntityManager {
         DongoEntityManager {
             e_vec: Vec::new(),
             next_vacant_id: ENTITYID::MIN,
+            has_changes: false,
         }
     }
     
     fn _get_entities(&self) -> &Vec<DongoEntity> {
         &self.e_vec
 
+    }
+
+    pub fn has_changes(&self) -> bool {
+        self.has_changes
     }
     
     pub fn get_objects(&self) -> Vec<&dyn Object> {
@@ -45,17 +51,15 @@ impl DongoEntityManager {
 
     pub fn filter_to_objects(&self, predicate: impl Fn(&DongoEntity) -> bool) -> Vec<&dyn Object> {
         let mut objects: Vec<&dyn Object> = Vec::new();
-
-        self.e_vec.iter().filter(|e| predicate(*e) ).for_each(|e| {
+    
+        self.e_vec.iter().filter(|e| predicate(*e)).for_each(|e| {
             match e {
-                DongoEntity::Object(mmp, _,_) => objects.push(mmp.object()),
-                DongoEntity::Model(m, _,_) => m.iter().for_each(|part| objects.push(part)),
-                DongoEntity::Terrain(mmp,_ ,_ ,_ ) => objects.push(mmp.object()),
-                //_ => (),
-                // DongoEntity::ColorModel(m) => m.iter().for_each(|part| objects.push(part)),
+                DongoEntity::Object(mmp, _, _) => objects.push(mmp.object()),
+                DongoEntity::Model(m, _, _) => m.iter().for_each(|part| objects.push(part.object())),
+                DongoEntity::Terrain(mmp, _, _, _) => objects.push(mmp.object()),
             }
-        });   
-
+        });
+    
         objects
     }
 
@@ -64,6 +68,7 @@ impl DongoEntityManager {
         entity.set_id_achtung(id);
         self.e_vec.push(entity);
         self.next_vacant_id += 1;
+        self.has_changes = true;
         id
     }
 
@@ -71,6 +76,7 @@ impl DongoEntityManager {
         let id = self.next_vacant_id;
         self.add_entity(DongoEntity::Object(Box::new(gm), meta,Some(id)));
         self.next_vacant_id += 1;
+        self.has_changes = true;
         id
     }
 
