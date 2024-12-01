@@ -49,10 +49,12 @@ pub fn main() {
     //     limiter: MAP_PERLIN_LIMITER,
     //     filter: Box::new(default_terrain_filter),
     // };
-    let terrain_source = FlatTerrainSource { height: MAP_MIN_HEIGHT as f32 };
+    let terrain_source = FlatTerrainSource {
+        height: MAP_MIN_HEIGHT as f32,
+    };
 
     let terrain_meta = DongoTerrainMetadata::new(terrain_source);
-    let terrain_builder = TerrainBuilder::new(MAP_SIZE, MAP_VERTEX_DISTANCE);        
+    let terrain_builder = TerrainBuilder::new(MAP_SIZE, MAP_VERTEX_DISTANCE);
     let terrain_entity =
         terrain_builder.create_terrain_entity(&context, terrain_meta, MAP_COLOR_MODE);
     let terrain_id = entities.add_entity(terrain_entity);
@@ -74,8 +76,7 @@ pub fn main() {
     entities.add_entity(cube_entity);
 
     // ############ LIZZO ############
-    // let mut croc_entity =
-    //     DongoEntity::from_obj_file(&context, "Gator_Float", DongoMetadata::new_empty());
+    // let mut croc_entity = DongoEntity::from_obj_file(&context, "Gator_Float", DongoMetadata::new_empty());
 
     let mut croc_entity = DongoEntity::from_gm(
         Gm::new(
@@ -88,55 +89,7 @@ pub fn main() {
     croc_entity.set_pos(vec3(0.0, 500.0, 600.0));
     let croc_id = entities.add_entity(croc_entity);
 
-
-    let move_lizzo = |croc_id: ENTITYID,
-                      terrain_id: ENTITYID,
-                      entities: &mut DongoEntityManager,
-                      camera: &Camera|
-     -> bool {
-        let terrain = entities.get_entity_by_id(terrain_id).unwrap();
-
-        let croc_pos = entities.get_entity_by_id(croc_id).unwrap().pos().clone();
-        let height = terrain.get_height_at(croc_pos.x, croc_pos.y);
-        let direction = camera.position() - croc_pos;
-
-        let mut new_pos = croc_pos + direction.normalize() * 0.5;
-        new_pos.z = height + 300.0;
-
-        let croc = entities.get_entity_by_id_mut(croc_id).unwrap();        
-        
-        let angle_to_camera = direction.y.atan2(direction.x); // Angle in radians
-
-        // Extract the scale from the current transformation matrix
-        let current_transform = croc.transform();
-
-        // Add the scale to the transformation matrix
-        let scale = Vector3::new(
-            current_transform.x.x.abs(), // Scale on X-axis
-            current_transform.y.y.abs(), // Scale on Y-axis
-            current_transform.z.z.abs(), // Scale on Z-axis
-        );
-        let mut new_transform = Matrix4::<f32>::identity();        
-
-        
-        
-        // ROTATION
-        // new_transform =
-        //     new_transform * Matrix4::from_angle_y(Rad(angle_to_camera));    
-
-        // TRANSLATION
-        new_transform = new_transform * Matrix4::from_translation(new_pos.into());        
-        
-        // SCALING
-        new_transform = new_transform * Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z);
-        
-
-        dbg!(new_transform);
-        // Set the new transformation matrix
-        croc.set_transform(new_transform);
-                
-        true
-    };
+    
 
     // ############ LIGHTS ############
     let mut directional_light =
@@ -176,7 +129,7 @@ pub fn main() {
                 entities.filter_to_objects(|e| !e.has_tag(TAG_NO_LIGHT)),
             );
 
-            change |= move_lizzo(croc_id, terrain_id, &mut entities, &camera);
+            change |= crate::lizzo::move_lizzo(croc_id, terrain_id, &mut entities, &camera);
 
             let all_objects = entities.get_objects();
             if change {
