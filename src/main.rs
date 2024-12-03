@@ -40,18 +40,23 @@ pub fn main() {
     // declare the entity manager. Like a big fat list of all entities
     let mut entities = DongoEntityManager::new();
 
+
+    let mut axes = Axes::new(&context, 2.0, 40.0);
+    let axes_transform = axes.transformation();
+    axes.geometry.set_transformation(axes_transform * Mat4::from_translation(vec3(0.0, 0.0, 10.0)));
+
     // ############ TERRAIN ############
-    // let terrain_source = FilteredPerlinTerrainSource {
-    //     perlin: noise::Perlin::new(MAP_SEED),
-    //     noise_factor: MAP_PERLIN_NOISE_FACTOR,
-    //     map_max_height: MAP_MAX_HEIGHT,
-    //     map_min_height: MAP_MIN_HEIGHT,
-    //     limiter: MAP_PERLIN_LIMITER,
-    //     filter: Box::new(default_terrain_filter),
-    // };
-    let terrain_source = FlatTerrainSource {
-        height: MAP_MIN_HEIGHT as f32,
+    let terrain_source = FilteredPerlinTerrainSource {
+        perlin: noise::Perlin::new(MAP_SEED),
+        noise_factor: MAP_PERLIN_NOISE_FACTOR,
+        map_max_height: MAP_MAX_HEIGHT,
+        map_min_height: MAP_MIN_HEIGHT,
+        limiter: MAP_PERLIN_LIMITER,
+        filter: Box::new(default_terrain_filter),
     };
+    // let terrain_source = FlatTerrainSource {
+    //     height: MAP_MIN_HEIGHT as f32,
+    // };
 
     let terrain_meta = DongoTerrainMetadata::new(terrain_source);
     let terrain_builder = TerrainBuilder::new(MAP_SIZE, MAP_VERTEX_DISTANCE);
@@ -66,30 +71,29 @@ pub fn main() {
 
     let mut cube_trimesh = CpuMesh::cube();
     cube_trimesh.colors = Some(Vec::from([DONGOCOLOR_RED; 36]));
-    let cube_gm = Gm::new(Mesh::new(&context, &cube_trimesh), phys_mat);
-    let mut cube_entity = DongoEntity::from_gm(
-        cube_gm,
-        DongoMetadata::new(Some("cube"), vec![TAG_SELECTABLE]),
-    );
-    cube_entity.set_transform(Mat4::from_scale(50.0));
-    cube_entity.set_pos(vec3(0.0, 0.0, 200.0));
-    entities.add_entity(cube_entity);
+    
+    // let cube_gm = Gm::new(Mesh::new(&context, &cube_trimesh), phys_mat);
+    // let mut cube_entity = DongoEntity::from_gm(
+    //     cube_gm,
+    //     DongoMetadata::new(Some("cube"), vec![TAG_SELECTABLE]),
+    // );
+    // cube_entity.set_transform(Mat4::from_scale(50.0));
+    // cube_entity.set_pos(vec3(0.0, 0.0, 200.0));
+    // entities.add_entity(cube_entity);
 
     // ############ LIZZO ############
-    // let mut croc_entity = DongoEntity::from_obj_file(&context, "Gator_Float", DongoMetadata::new_empty());
+    let mut croc_entity = DongoEntity::from_obj_file(&context, "Gator_Float", DongoMetadata::new_empty());
 
-    let mut croc_entity = DongoEntity::from_gm(
-        Gm::new(
-            Mesh::new(&context, &cube_trimesh),
-            PhysicalMaterial::new(&context, &cpu_mat),
-        ),
-        DongoMetadata::new_empty(),
-    );
+    // let mut croc_entity = DongoEntity::from_gm(
+    //     Gm::new(
+    //         Mesh::new(&context, &cube_trimesh),
+    //         PhysicalMaterial::new(&context, &cpu_mat),
+    //     ),
+    //     DongoMetadata::new_empty(),
+    // );
     croc_entity.set_transform(Mat4::from_scale(100.0));
-    croc_entity.set_pos(vec3(0.0, 500.0, 600.0));
+    croc_entity.set_pos(vec3(0.0, 0.0, 300.0));
     let croc_id = entities.add_entity(croc_entity);
-
-    
 
     // ############ LIGHTS ############
     let mut directional_light =
@@ -99,12 +103,21 @@ pub fn main() {
     // ############ EVENT HANDLER ############
     let mut ev_handler = event_handler::EventHandler::new();
 
+    let frame_duration = std::time::Duration::from_secs_f64(1.0 / MAX_FPS);
+
+    let mut temp_bool = false;
     let mut change: bool = true;
     event_loop.run(move |event, _, control_flow| match &event {
         wEvent::Event::MainEventsCleared => {
             window.request_redraw();
         }
         wEvent::Event::RedrawRequested(_) => {
+            let frame_start = std::time::Instant::now();
+            let elapsed = frame_start.elapsed();
+            if elapsed < frame_duration {
+                std::thread::sleep(frame_duration - elapsed);
+            }
+
             context.make_current().unwrap();
             let frame_input = frame_input_generator.generate(&context);
 
@@ -129,7 +142,9 @@ pub fn main() {
                 entities.filter_to_objects(|e| !e.has_tag(TAG_NO_LIGHT)),
             );
 
-            change |= crate::lizzo::move_lizzo(croc_id, terrain_id, &mut entities, &camera);
+            if temp_bool {
+                change |= crate::lizzo::move_lizzo(croc_id, terrain_id, &mut entities, &camera);
+            }
 
             let all_objects = entities.get_objects();
             if change {
@@ -138,7 +153,7 @@ pub fn main() {
                     .screen()
                     // Clear the color and depth of the screen render target
                     .clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 1.0, 1.0))
-                    .render(&camera, all_objects, &[&directional_light, &ambient_light]);
+                    .render(&camera, axes.into_iter().chain(all_objects), &[&directional_light, &ambient_light]);
 
                 context.swap_buffers().unwrap();
                 control_flow.set_poll();
@@ -155,12 +170,28 @@ pub fn main() {
                 change = true;
             }
             wEvent::DeviceEvent::Key(input) => {
-                if input.virtual_keycode == Some(wEvent::VirtualKeyCode::C) {
-                    window.set_cursor_visible(true);
-                    change = true;
-                } else if input.virtual_keycode == Some(wEvent::VirtualKeyCode::V) {
-                    window.set_cursor_visible(false);
-                    change = true;
+                if let Some(key) = input.virtual_keycode {
+                    match key{
+                        wEvent::VirtualKeyCode::C => {
+                            window.set_cursor_visible(true);
+                            change = true;
+                        },
+                        wEvent::VirtualKeyCode::V => {
+                            window.set_cursor_visible(false);
+                            change = true;
+                        },
+                        wEvent::VirtualKeyCode::Escape => {
+                            context.make_current().unwrap(); // reckon this is always the current window, if so this is just an artefact from the example
+                            control_flow.set_exit();
+                        },
+                        wEvent::VirtualKeyCode::K => {
+                            temp_bool = true;                            
+                        },
+                        wEvent::VirtualKeyCode::L => {
+                            temp_bool = false;
+                        },
+                        _ => {}
+                    }
                 }
             }
             _ => {}

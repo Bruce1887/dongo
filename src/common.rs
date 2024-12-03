@@ -34,6 +34,7 @@ pub const CAMERA_HEIGHT_OFFSET: f32 = 50.0; // how high the camera is above the 
 
 // other
 pub const SHAHDOW_TEXTURE_SIZE: u32 = 512;
+pub const MAX_FPS: f64 = 240.0;
 
 // loading indicator stuff
 pub fn print_loading_indicator(_current: f32, _goal: f32) {    

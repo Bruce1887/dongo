@@ -55,9 +55,9 @@ impl EventHandler {
                 } => {
                     self.check_keys_down(ev);
 
-                    if *kind == Key::W && modifiers.ctrl {
-                        std::process::exit(0);
-                    }
+                    // if *kind == Key::W && modifiers.ctrl {
+                    //     std::process::exit(0);
+                    // }
 
                     if *kind == Key::ArrowUp {
                         crate::camera_controller::zoom_camera(camera, &(28.0, 28.0));
