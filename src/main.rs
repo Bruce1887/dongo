@@ -54,9 +54,7 @@ pub fn main() {
         limiter: MAP_PERLIN_LIMITER,
         filter: Box::new(default_terrain_filter),
     };
-    // let terrain_source = FlatTerrainSource {
-    //     height: MAP_MIN_HEIGHT as f32,
-    // };
+    // let terrain_source = FlatTerrainSource::new(0.0);
 
     let terrain_meta = DongoTerrainMetadata::new(terrain_source);
     let terrain_builder = TerrainBuilder::new(MAP_SIZE, MAP_VERTEX_DISTANCE);
@@ -72,25 +70,9 @@ pub fn main() {
     let mut cube_trimesh = CpuMesh::cube();
     cube_trimesh.colors = Some(Vec::from([DONGOCOLOR_RED; 36]));
     
-    // let cube_gm = Gm::new(Mesh::new(&context, &cube_trimesh), phys_mat);
-    // let mut cube_entity = DongoEntity::from_gm(
-    //     cube_gm,
-    //     DongoMetadata::new(Some("cube"), vec![TAG_SELECTABLE]),
-    // );
-    // cube_entity.set_transform(Mat4::from_scale(50.0));
-    // cube_entity.set_pos(vec3(0.0, 0.0, 200.0));
-    // entities.add_entity(cube_entity);
-
     // ############ LIZZO ############
     let mut croc_entity = DongoEntity::from_obj_file(&context, "Gator_Float", DongoMetadata::new_empty());
 
-    // let mut croc_entity = DongoEntity::from_gm(
-    //     Gm::new(
-    //         Mesh::new(&context, &cube_trimesh),
-    //         PhysicalMaterial::new(&context, &cpu_mat),
-    //     ),
-    //     DongoMetadata::new_empty(),
-    // );
     croc_entity.set_transform(Mat4::from_scale(100.0));
     croc_entity.set_pos(vec3(0.0, 0.0, 300.0));
     let croc_id = entities.add_entity(croc_entity);

@@ -35,6 +35,13 @@ impl DongoTerrainSource for PerlinTerrainSource {
 pub struct FlatTerrainSource {
     pub height: f32,
 }
+impl FlatTerrainSource {
+    pub fn new(height: f32) -> Self {
+        Self {
+            height
+        }
+    }
+}
 
 impl DongoTerrainSource for FlatTerrainSource {
     fn get_height_at(&self, _x: f32, _y: f32) -> f32 {
