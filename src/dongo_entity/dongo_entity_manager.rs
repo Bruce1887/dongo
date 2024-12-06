@@ -18,7 +18,6 @@ impl DongoEntityManager {
     
     fn _get_entities(&self) -> &Vec<DongoEntity> {
         &self.e_vec
-
     }
 
     pub fn has_changes(&self) -> bool {

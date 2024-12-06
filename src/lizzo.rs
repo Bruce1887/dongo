@@ -14,7 +14,7 @@ pub fn move_lizzo(
     let direction = camera.position() - croc_pos;
 
     let mut new_pos = croc_pos + direction.normalize() * 1.2; // TODO: Extract speed from somewhere else
-    new_pos.z = height + 200.0; // TODO: Extract height offset from somewhere else
+    new_pos.z = height + 100.0; // TODO: Extract height offset from somewhere else
 
     let croc = entities.get_entity_by_id_mut(croc_id).unwrap();
 
@@ -31,4 +31,9 @@ pub fn move_lizzo(
     croc.set_transform(new_transform);
 
     true
+}
+
+
+pub fn temp(croc: &mut DongoEntity){
+    print!("{}", croc.metadata().desc());
 }

@@ -71,7 +71,7 @@ pub fn main() {
     cube_trimesh.colors = Some(Vec::from([DONGOCOLOR_RED; 36]));
     
     // ############ LIZZO ############
-    let mut croc_entity = DongoEntity::from_obj_file(&context, "Gator_Float", DongoMetadata::new_empty());
+    let mut croc_entity = DongoEntity::from_obj_file(&context, "Gator_Float_V2", DongoMetadata::new_empty());
 
     croc_entity.set_transform(Mat4::from_scale(100.0));
     croc_entity.set_pos(vec3(0.0, 0.0, 300.0));
